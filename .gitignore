@@ -1,1 +1,3 @@
 ieee_corpus/
+__pycache__/
+*.pyc
