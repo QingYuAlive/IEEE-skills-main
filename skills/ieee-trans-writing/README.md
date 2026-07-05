@@ -1,24 +1,62 @@
 # ieee-trans-writing
 
-用于起草、重构或补写 IEEE Transactions 风格论文段落和章节。它不是通用英文写作工具，而是把作者材料组织成“问题定义 -> 数学方法 -> 实验防线 -> 受限结论”的论文写作流程。
+`ieee-trans-writing` drafts and audits mathematically grounded manuscript sections for IEEE Transactions venues such as TCYB, THMS, and TNNLS.
 
-## 适用场景
+## Scope
 
-- 写 abstract、introduction、related work、method、experiment、discussion、conclusion。
-- 把中文实验笔记改写成 IEEE 论文段落。
-- 把已有方法说明重构为公式先行的 Method。
-- 把实验结果组织成审稿人能接受的 Results 分析。
+Use this skill for:
 
-## 必读共享准则
+- abstract drafting with problem, limitation, mechanism, and evidence blocks
+- introduction drafting with formal task, OOD failure, technical mechanism, and categorized contributions
+- equation-first method sections
+- experiments and results sections with protocol, baseline, ablation, visualization, and complexity defense
+- claim-evidence audits for robustness, generalization, invariance, convergence, and deployment claims
+- Chinese or mixed Chinese-English author notes that must become rigorous IEEE-style English prose
 
-触发后必须先读 `../_shared/ieee-trans-guidelines.md`。如果要写方法，继续读 `references/equation-first-methods.md`；如果要写实验或结果，读 `references/bulletproof-results.md`；如果要写具体章节，读 `references/section-patterns.md`。
+## Core Rule
 
-## 默认输出
+The skill does not draft full prose until the user supplies a passed mathematical intake package: Notation Ledger, formal task, objective, OOD protocol, mechanism map, and evidence ledger.
 
-除非用户只要最终段落，否则先给出：
+## Active Structure
 
-1. 检测到的章节与论文类型。
-2. 一句话 thesis。
-3. 公式/实验/证据骨架。
-4. 正文草稿。
-5. 未支撑主张与需要补的材料。
+```text
+ieee-trans-writing/
+  SKILL.md
+  manifest.yaml
+  agents/
+    openai.yaml
+  static/
+    core/
+      stance.md
+      workflow.md
+      output-format.md
+    fragments/
+      section/
+      journal/
+      language/
+      paper_type/
+  references/
+    abstract.md
+    article-architecture.md
+    chinese-author-workflow.md
+    conclusion.md
+    experiments.md
+    introduction.md
+    method.md
+    paper-review.md
+    paragraph-flow.md
+    related-work.md
+```
+
+## Review Standard
+
+Every major claim must map to at least one of:
+
+- a defined symbol or assumption
+- an equation or algorithm step
+- an OOD protocol
+- a baseline comparison
+- an ablation or sensitivity study
+- a theorem condition, convergence statement, or bound
+- a complexity, latency, memory, or throughput measurement
+- a specific limitation
