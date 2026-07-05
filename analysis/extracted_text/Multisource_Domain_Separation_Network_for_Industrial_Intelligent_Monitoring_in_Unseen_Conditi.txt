@@ -1,0 +1,760 @@
+
+
+===== PAGE 1 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+IEEE TRANSACTIONS ON CYBERNETICS 1
+Multisource Domain Separation Network for
+Industrial Intelligent Monitoring in
+Unseen Conditions
+Zidi Jia , Member, IEEE, Lei Ren , Senior Member, IEEE, Zuo-Jun Max Shen, Member, IEEE,
+and Laurence T. Yang , Fellow, IEEE
+Abstract—Industrial time-series prediction is one of the crucial time-series prediction, multisource domain separation network
+tasks of industrial artificial intelligence, which has been exten- (MS-DSN), supervised contrastive similarity.
+sively adopted in intelligent monitoring. However, continuous
+variations in the working conditions of industrial processes
+I. INTRODUCTION
+lead to continuous changing in monitoring data, resulting in
+distribution shift. Industrial time-series prediction models may RECENTLY, the advancements in artificial intelligence
+not be able to maintain satisfactory accuracy. Domain general- technology have made data-driven methods popular in
+ization (DG) methods can effectively improve the robustness and
+Industrial Internet of Things (IIoT) [1]. These methods only
+generalization of the models for unseen or dynamic distribution
+need to obtain information from monitoring data and can
+data. However, existing methods have drawbacks limit their
+applicability in practice. First, most DG methods are designed realize better performance, thus they have been extensively
+for classification tasks and lack a general framework for regres- studied [2]. The widespread application of advanced artificial
+sion tasks. Second, extracting domain-invariance may obscure intelligence technology has led to significant breakthroughs
+task-relevant information, thereby degrading the prediction pre-
+in many area of industrial manufacturing, such as predictive
+cision. Third, DG methods are generally sensitive to extremely
+maintenance [3], product life-cycle management [4], and smart
+distributed data, potentially compromising the robustness. To
+address these issues, a multisource domain separation network grids [5]. Industrial time-series prediction is a critical com-
+(MS-DSN) is proposed. First, by constructing a DSN to separate ponent of these issues [6], and holds great importance for
+the features into domain-private and -shared spaces, domain- ensuring safe, stable, and efficient industrial production [7].
+specific information can be filtered while domain-invariant
+Deep learning models are commonly employed to analysis
+features are preserved. Second, a supervised contrastive loss is
+industrial time-series [8]. While these methods generally per-
+defined to preserve the domain invariant information related to
+the label changing tendency in the domain-shared space. Finally, form well in controlled experimental settings, the presence
+a directional risk extrapolation (DREx) method is proposed to of numerous uncertainties in complex industrial environments
+represents the extreme distributed data. Experiments on two hinders their widespread practical application.
+datasets, CMAPSS and N-CMAPSS, verify the effectiveness of
+Industrial process conditions in IIoT are increasingly com-
+our method.
+plex and varying. It may lead to variations in the distribution
+Index Terms—Directional risk extrapolation (DREx), domain of collected monitoring data, referred to as a distribution
+generalization (DG), industrial intelligent monitoring, industrial
+shift [9]. For instance, in a flexible manufacturing process,
+the operational state of production equipment continually
+fluctuates in response to varying manufacturing tasks. It poses
+Received 27 May 2025; revised 24 September 2025; accepted 29 September
+2025. This work was supported in part by the National Key Research a challenge to the independent and identically distributed data
+and Development Program of China under Grant 2023YFB3308000 and in assumption required by most models. Conventional time-series
+part by the National Science Foundation of China (NSFC) under Project
+prediction methods may not be able to adapt to sudden changes
+62225302 and Project 62173023. This article was recommended by Associate
+Editor C. Zhao. (Corresponding author: Lei Ren.) in working conditions or gradual evolution processes, resulting
+Zidi Jia is with the School of Automation Science and Electrical Engineer- in reduced reliability. While it is theoretically possible to
+ing, Beihang University, Beijing 100191, China (e-mail: jiazidi@buaa.edu.cn).
+collect real-time monitoring data from the work environment
+Lei Ren is with the School of Automation Science and Electrical Engi-
+neering, Beihang University, Beijing 100191, China, also with Hangzhou for model retraining or fine-tuning, high-quality data collection
+International Innovation Institute, Beihang University, Hangzhou 311115, and labeling is prohibitively expensive and challenging in
+China, and also with the State Key Laboratory of Intelligent Manufacturing
+practical production settings. Unfortunately, most current deep
+System Technology, Beijing 100854, China (e-mail: renlei@buaa.edu.cn).
+Zuo-Jun Max Shen is with the Faculty of Engineering and the Faculty learning-based industrial time-series prediction methods face
+of Business and Economics, University of Hong Kong, Hong Kong, China this challenge. It makes these methods unreliable and difficult
+(e-mail: vp-research@hku.hk).
+to generalize [7], [10].
+Laurence T. Yang is with the Department of Computer Science,
+St. Francis Xavier University, Antigonish, NS B2G 2W5, Canada (e-mail: Currently, several methods have been proposed to address
+ltyang@ieee.org). distribution shifts. Innovations in domain adaptation (DA)
+Color versions of one or more figures in this article are available at
+https://doi.org/10.1109/TCYB.2025.3618124. have been proposed and implemented [11], [12]. For instance,
+Digital Object Identifier 10.1109/TCYB.2025.3618124 Li et al. [13] proposed passive multi-DA of deep neural
+© 2025 The Authors. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 License.
+For more information, see https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+===== PAGE 2 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+2 IEEE TRANSACTIONS ON CYBERNETICS
+networks based on fuzzy rules, utilizing fuzzy systems to In this article, a multisource domain separation network
+handle data uncertainty in DA even without access to source (MS-DSN) is proposed for solving the challenge of predicting
+data. Jia et al. [14] proposed a DA method based on contrastive industrial time-series in unseen scenarios. The primary contri-
+learning for domain-invariant prediction across domains, by butions can be outlined as.
+representing the relationship between feature distribution and 1) A model-agnostic DG structure for industrial time-series
+label changes. These methods eliminate the impact of domain prediction in varying and unseen condition, denoted as
+shift by discovering domain-invariant knowledge between MS-DSN, is put forth in this proposal. In MS-DSN,
+source and target domains. Nevertheless, these methods are private subspace and shared subspace are introduced for
+effective only when unlabeled target data are accessed, leading each domain. By excluding domain private information,
+to limitations in their generalizability across various practical domain-invariant information is captured.
+applications. Many industrial applications have very high 2) A supervised contrastive similarity loss is defined to
+requirements for timeliness, which makes data collection and improve the similarity of each source domain data in
+model retraining challenging [15]. It is crucial to reduce the domain shared space, ensuring that all data within
+the sensitivity of deep learning models to distribution shifts, the shared space exhibit similar label varying trends.
+improve their generalization ability to unseen data, and per- 3) A directional risk extrapolation (DREx) method is pro-
+form well in unseen conditions. Domain generalization (DG) posed to reduce the sensitivity of the prediction model
+is a method to solve distribution shifts in unseen conditions to extreme distribution changes and enhance its overall
+[16], [17]. By training the model in one or more source robustness to distribution shifts.
+domains, high generalization to unseen target domains can
+The rest of this article is organized as follows. The related
+be achieved without accessing target data [18]. Up to the
+works are discussed in Section II. Then, the methodology
+present, various DG methods have been developed that excel
+of MS-DSN is presented in Section III. In Section IV, the
+in addressing domain transfer challenges in unseen conditions.
+experimental results are presented and analyzed. Finally, the
+For instance, Zhao and Shen [19] introduced a single-DG
+conclusion is drawn in Section V.
+network for mechanical fault diagnosis, guided by adversarial
+mutual information. Xia et al. [20] proposed a depth sensing II. RELATED WORKS
+adversarial DA method that uses perceptual loss to force the
+A. Industrial Time-Series Prediction
+target domain and source domain to have the same distribution,
+which is used for fault diagnosis of industrial robot bearings Since most of the data collected in industrial intelligent
+under different conditions. Despite recent progress, there are monitoring systems are sensor signals and control signals,
+still many issues that need to be addressed. time-series prediction is a core task in intelligent monitoring.
+First, to the best of our knowledge, most of the solutions to Time-series prediction methods based on deep learning are a
+distribution shift so far are aimed at classification problems. promising technology for extracting and analyzing spatiotem-
+Cross-domain methods for prediction and regression issues poral correlations between features in industrial time-series.
+have not yet received much attention, especially in industrial These methods can identify and analyze these correlations,
+scenarios. Many current studies on cross-domain learning providing a powerful means of understanding the complex
+methods rely on techniques such as pseudo-label [21] or dis- relationships between different features of temporal data [7].
+tribution assumptions [22]. However, assessing the reliability As demand for flexibility in industrial tasks continues to
+of relevant metrics for these techniques in regression tasks can grow, manufacturing on mixed production lines involving mul-
+be challenging. Second, basic distribution alignment is likely tiple, constantly changing processes is becoming increasingly
+to obscure specific information related to downstream tasks. common. Consequently, the distribution of monitoring data
+Because downstream task information may be irrelevant to is subject to constant change, which makes related moni-
+inter-domain correlation. There is currently no feasible method toring tasks more challenging. Furthermore, industrial time
+for analyzing industrial time-series under distribution shifts, data originate from a variety of sources, is high-throughput
+particularly when the target data is not accessible. Therefore, and low-value intensive, and is highly dynamic. Traditional
+studying general DG methods that can be applied to various methods struggle to effectively deal with the complexity and
+issues is also a thorny problem that needs to be solved urgently. dynamic characteristics of industrial time data. Therefore,
+Third, DG models may be sensitive to extreme distribution highly generalized, robust, and evolvable models are needed.
+changes, resulting in satisfactory robustness not always being
+maintained. Therefore, this article is to study a DG method to B. Domain Generalization
+solve the problem of industrial time-series prediction under DG enables the model to maintain high robustness when
+varying and unseen working conditions. As the targets of processing more widely distributed data by learning invariant
+industrial monitoring tasks are typically fixed, these tasks knowledge across various domains. Let X represent the data
+can be considered invariant. This means that the distribution and Y denote its corresponding labels. A domain, denoted
+of features related to the predicted targets in the monitoring as D = {(x , y )}n , consists of data sampled from a joint
+i i i=1
+signals remains unchanged in the feature space, and features distribution P . Conventional methods involve acquiring a
+XY
+that vary with working conditions can be considered noise. prediction function f:X → Y within the hypothesis space
+Therefore, the method described in this article is based on the through empirical risk minimization (ERM) applied to the
+strategy of invariant risk minimization (IRM). training set D. However, when the training and test sets do not
+
+===== PAGE 3 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+JIA et al.: MULTISOURCE DSN FOR INDUSTRIAL INTELLIGENT MONITORING IN UNSEEN CONDITIONS 3
+Fig. 1. Overall framework of MS-DSN. Autoencoders are used for representation learning in private space and shared space, respectively.
+obey the assumption of independent and identical distributed, to standardize the alignment of features in different domains,
+ERM is less robust and difficult to generalize, despite its such as IRM [24]. Krueger et al. [25] advocate for feature
+high computational efficiency. Therefore, DG is proposed and invariance by minimizing the extrapolation risk among source
+applied. domains, effectively diminishing the variance of the source
+Given a training set S = {Sk}K containing K source domain risk. In industrial intelligent monitoring tasks, working
+k=1
+domains, Sk ∼ Pk , obeying different distributions Pk , the conditions may change very frequently, which can lead to
+XY XY
+objective of DG is to acquire a robust and generalizable predic- changes in the distribution of monitoring signals. Therefore,
+tion function f from S through minimizing the expected error DG methods are required to improve the robustness of the
+on any unseen target domain T , where the joint distribution monitoring model, with the IRM method being the most
+PT is distinct from Pi for i = 1, . . . , K suitable for this purpose.
+XY XY
+Although there have been many related studies, most of
+f = arg min E L (f (x) , y) . (1)
+(x,y)∈T them are used for classification tasks (such as fault diagnosis),
+and only consider aligning the features of the overall source
+Numerous DG methods have been proposed, broadly
+domain data features to reduce the differences between the
+categorized into approaches based on data manipulation, rep-
+domains. How to design a more universal DG method is an
+resentation learning, and learning strategies [17]. Our primary
+urgent issue that needs to be solved.
+focus is on methods grounded in representation learning.
+Domain adversarial training stands as a widely employed
+III. METHODOLOGY
+technique for acquiring domain-invariant representations, with
+A. Multisource DSN
+the domain adversarial neural network [23] serving as the most
+frequently utilized method in this context. Explicit alignment Inspired by domain-separated networks [26] for DA, this
+is a more direct approach, directly utilizing specific constraints article applies domain-private components and domain-shared
+
+===== PAGE 4 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+4 IEEE TRANSACTIONS ON CYBERNETICS
+information as possible is extracted by the encoders. During
+model training, the data X (k = 1, . . . , K) of the kth source
+k
+domain are input into the domain private encoder EP and the
+k
+domain shared encoder ES , respectively, to obtain the domain
+private hidden features HP and the domain shared hidden
+k
+features HS . After this, HS is input into the shared predictor to
+k k
+obtain the monitoring indicator Y . After HP is concatenated
+k k
+with HS , it is input into the domain private decoder DP to
+k k
+generate reconstructed data Xˆ . In our method, by maximizing
+k
+the diversity between domain-private and -shared hidden fea-
+Fig. 2. Topology of the neural network structure of MS-DSN. tures HP and HS , domain-private features could be removed
+k k
+from HS and consistency could be maintained. Besides, the
+k
+effectiveness of feature extraction is ensured by minimizing the
+components to gain domain invariant insights from multiple difference between the reconstructed data Xˆ k and the original
+source domain data. Traditional DG methods typically involve data X k . Furthermore, by minimizing the difference among
+aligning features between different data domains. While these HS across domains (in MS-DSN, it is realized by maximiz-
+methods are effective and feasible in theory, they can retain ing the mutual information lower bound), the extraction of
+significant amounts of noise shared between domains, which domain-invariant information is further ensured. Finally, the
+can mask useful information. To address this issue, this article risk differences in different training domains are reduced by
+introduces the concepts of domain-private and domain-shared minimizing risk extrapolation to reduce the sensitivity of the
+spaces. For each domain, these two spaces are conjugate to model to a wide range of extreme distribution changes. The
+each other and together they contain all the information in that trained domain shared encoder and shared predictor are models
+domain. The domain-private space is unique to each domain, with high generalization ability to data distribution shifts.
+while the domain-shared space is shared by all domains. Algorithm 1 shows the flow of the proposed MS-DSN.
+Since this method is based on the assumption of IRM, it
+Algorithm 1 Algorithm of Training MS-DSN
+is hypothesized that information relevant to the downstream
+monitoring task is contained within the domain-shared space. Input: Source data Dk = {X k,i , y k,i }n i= k 1 , k = 1, . . ., K,
+By identifying a shared subspace that is orthogonal to the pri- Initialized shared encoder ES ,
+vate subspace, the method can separate unique domain-specific Initialized private encoders EP, k = 1, . . ., K,
+k
+information and generate more meaningful representations for Initialized private decoders DP, k = 1, . . ., K,
+k
+downstream tasks. In this case, modeling of the downstream Initialized predictor P.
+tasks can be performed in the domain-shared space to achieve Output: Trained shared encoder ES ,
+high generalization. Trained predictor P.
+MS-DSN utilizes parallel domain-private encoders and a 1: for number of iterations do
+domain-shared encoder to explicitly represent domain private 2: Sample minibatch data X k ∼ Dk, k = 1, . . ., K
+information and domain shared information. By maximiz- 3: Extract the shared latent representation: H k S = ES (X k ),
+ing the difference between domain shared representation and k = 1, . . ., K
+domain private representation, domain-specific information 4: Extract the private latent representation: H k P = E k P(X k ),
+is filtered to obtain domain-invariant information related to k = 1, . . ., K
+downstream tasks. It is to note that, given the based assumption 5: Predict Y k of X k : Y k = P(hS k ), k = 1, . . ., K, and compute
+of domain-IRM, it is not applicable to heterogeneous DG L task by Eq.(12)
+tasks. 6: Reconstruct X k : Xˆ k = D k P(concat(hS k , h k P)), k = 1, . . ., K,
+Fig. 1 shows the framework of the proposed MS-DSN and compute the reconstruct loss L reconstruct by Eq.(5)
+method. We believe that MS-DSN is applicable to a variety of 7: Compute the loss of diversities L diversity of h k P and hS k ,
+DG tasks. Without losing generalization, we choose regres- k = 1, . . ., K, by Eq.(4)
+sion task as downstream task. Assume there are K source 8: Compute the loss of similarity L similarity of {hS k }, k =
+domains, S 1, . . . , S K. The topology of the neural network 1, . . ., K, by Eq.(7)
+structure of MS-DSN is shown in Fig. 2. The model consists 9: Update ES with L ES = L diversity + L similarity + L task +
+of a encoder layer and a decoder layer, with 1 domain L recontrust
+shared encoder, 1 domain shared predictor, K domain private 10: Update E k P, k = 1, . . ., K with L EP = L diversity +
+k
+encoders, and K domain private decoders (corresponding to L recontrust
+K source domains, respectively). The domain-private encoder 11: Update D k P, k = 1, . . ., K with L DP = L recontrust
+and domain-shared encoders are utilized for the extraction of 12: Update P with L P = L task k
+domain-private features and domain-shared features, respec- 13: end for
+tively. The domain-shared predictor is employed for the
+purpose of making predictions for downstream tasks. The Let HS and HP represent the shared and the private repre-
+k k
+domain-private decoders are used to reconstruct the original sentation of each domain, X and Xˆ represent the raw data
+k k
+data, with the objective being to ensure that as much effective and its reconstruction in the kth domain, and Y represent the
+
+===== PAGE 5 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+JIA et al.: MULTISOURCE DSN FOR INDUSTRIAL INTELLIGENT MONITORING IN UNSEEN CONDITIONS 5
+B. Supervised Contrastive Similarity
+A supervised contrastive similarity loss, L is defined
+similarity
+to reduce the difference of the shared representations, that is,
+to obtain domain invariant representation. As shown in many
+studies, the domain-invariant information extracted by many
+methods is likely to contain a large amount of noise related
+to shared representations [26], [27]. Simple extraction of this
+information (just like domain adversarial neural network) may
+lead to losing valuable information. Besides, these methods
+Fig. 3. Structure of the module for each domain.
+are effective in classification tasks, especially the alignment of
+data distribution boundaries has significant benefits for the DG
+predicted indicator. ES , EP, DP, and P are domain shared of classification methods. The regression prediction problem
+encoder, domain private encoder, domain private decoder, pays more attention to the trend of label changes with features,
+and shared predictor, respectively. The inference of MS-DSN so these methods may not always work.
+consists of the following parts: Thus, L similarity based on supervised contrastive learning
+is defined to enable the data in each domain converge to
+8 HS = ES (X ) similar distribution in the feature space. We adopt the density
+ˆˆˆ<H k
+P = EP (X
+k
+) ratio assumption from van den Oord et al. [28] and define
+ˆˆˆ:y Xˆ k k
+=
+=
+P
+D
+(cid:0)
+k P k
+H
+(cid:0)
+S
+co
+(cid:1)
+k n
+.
+cat (cid:0) H k S , H k P(cid:1)(cid:1) (2) a Th c e on lo tr s a s st f i u v n e c s ti i o m n ila is rit b y as l e o d ss o m n e th tr e ic fo w ll i o th wi l n ab g e a ls ss a u s m a pt m io e n t : ri t c h s e .
+k k variation tendency of labels in various domains is positively
+related to the variation of data distribution in the feature space.
+The training goal is to minimize the following loss:
+L acts on the domain sharing features, and its goal is to
+similarity
+obtain similar representations for samples with similar labels
+L = L + αL + βL + γL (3)
+task reconstruct diversity similarity in all domains
+where α, β, γ are hyperparameters that control the interaction L
+similarity
+o ar f e th lo e ss lo f s u s nc te ti r o m n s s . f L o t r ask c , ol L la r b ec o o r n a st t r i u v c e t , t L ra d i i n ve i r n s g ity . , T a h n e d p L re si d m i il c a t r o ity r = − log X "P k(cid:44)i ex P p (−τ |y i − (cid:0) y k |) ˇ cosin (cid:0) ˇ H (cid:1) i S , H k S (cid:1) + ε #
+trained on the shared representation generalizes better across i j(cid:44)i exp −τ ˇy i − y jˇ
+domains since its input is not contaminated by aspects of the (6)
+representation which are unique to each domain.
+where cosin means cosine similarity and H is the encoding of
+The data in each domain is projected in shared space and
+all source domain data in minibatch. ε is the hyperparameter,
+private space, respectively, and is analyzed in the shared and we let ε = 1e−5 in our experiments. In order to avoid
+predictor. The module corresponding to the kth domain is
+unnecessary computation, batch normalization is performed
+shown in Fig. 3. To induce the model to produce such a split
+on hS before L ’s computing. The loss function can be
+representation, we define diversity loss, L , to encourage similarity
+diversity further simplified to
+the independence of these parts. L operates across
+diversity
+domains, fostering the extraction of distinct facets of the input L
+similarity
+by both shared and private encoders. The definition of L diversity 2P exp (−τ |y − y |) (cid:13) (cid:13)HS (cid:62) HS (cid:13) (cid:13) 3
+involves a soft subspace orthogonality constraint between the = − log X 4 k(cid:44)i P (cid:0) i ˇ k (cid:13) i ˇ(cid:1) j (cid:13) + ε5 . (7)
+private and shared representations i j(cid:44)i exp −τ ˇy i − y jˇ
+L diversity = X K (cid:13) (cid:13) (cid:13) h k p(cid:62) h k s (cid:13) (cid:13) (cid:13) 2 . (4) B in y v m ar i i n o i u m s i fi zi e n l g ds th c i a s n lo o s b s ta f i u n nc si t m io i n l , ar sa r m ep p r l e e s s en w ta it t h io s n i s m . ilar labels
+F
+k=1
+To ensure that the private representation retains as much C. Risk Extrapolation
+information as possible and add generalization, a reconstruc- We hypothesize that the differences among source domains
+tion loss L reconstruct is applied. The concatenation of h k s and h k p represent the changes we are likely to encounter, but that the
+is reconstructed into Xˆ through the private decoder ensuring changes at test time may be more extreme in magnitude. Solely
+the effectiveness of the encoder. A scale-invariant mean square using prediction bias (such as mean square error) to train the
+error term is utilized to represent the reconstruction loss model may cause the model to focus too much on a certain
+L reconstruct , which is applicable to each domain area, leading to model bias. This may render the model less
+robust to distribution shift.
+K
+L reconstruct = X m 1 (cid:13) (cid:13)X k − Xˆ k (cid:13) (cid:13) 2 2 + m 1 2 (cid:0)(cid:0) X k − Xˆ k (cid:1) · 1 m (cid:1)2 (5) do T m h a e in re s fo p re re , ve r n e t d s uc m in o g dels risk from diff b e e re in n g ces ove b r e ly twe se e n n siti s v o e urc to e
+k=1
+extreme distributions. To this end, we use the idea of IRM
+where m is the number of the sampling points of each sample. to improve the overall robustness by reducing the worst-case
+
+===== PAGE 6 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+6 IEEE TRANSACTIONS ON CYBERNETICS
+robustness. Krueger et al. [25] proposed a V-REx method
+to realize risk extrapolation by minimizing the covariance of
+predicted risks in each source domain. The form is as follows:
+K
+X
+R (cid:17) δVar ({R , . . . , R }) + R . (8)
+V-REx 1 K k
+k=1
+In regression tasks, the risk can be represented by prediction
+bias. However, the performance of co-variate shifting is limited
+when the model is misspecified, or the training data are limited
+or does not include the region of the test distribution. In
+particular, in our approach, both measures of DSN structure
+and similarity loss reduce the information contained in the
+extracted features, which may cause domain-specific informa- Fig. 4. Simplified diagram of the aircraft turbofan engine.
+tion for many downstream tasks to be filtered as well. At the
+same time, such prediction risk only considers the scale of the
+TABLE I
+bias of prediction, but not the direction of the bias. Therefore,
+we need to consider a more “extreme” approach. Since the PROPERTIES OF C-MAPSS
+specific information of each domain has been excluded from
+the features extracted by the domain sharing encoder, we can
+assume that {HS , . . . , HS } are identically distributed. There-
+1 K
+fore, we need to pay more attention to the overall distribution
+boundary. Therefore, a DREx is defined, as
+R (cid:17) Var ({R , . . . , R }) + ϕVar ({B , . . . , B }) (9)
+DREx 1 K 1 K
+TABLE II
+where R and B are the risk and bias of prediction of X
+K K k
+DESCRIPTION OF EACH CASE OF EXPERIMENTS ON CMAPSS
+1 X
+Nk
+R = |y − yˆ |2 (10)
+k N i i
+k i=1
+1 X
+Nk
+B = exp (|y − yˆ | − ψ) + exp (|yˆ − y | − ψ) . (11)
+k N i i i i
+k i=1
+The loss of the downstream task with DREx can be defined
+as
+1) CMAPSS: As shown in Table I, four sub-datasets are
+X K contained in CMAPSS, which differ in terms of operating
+L = R + δR . (12)
+task k DREx conditions, fault modes and number of engines. The dataset is
+k=1
+partitioned into samples with a sliding window. The window
+size and step size are 30 and 1, respectively. The maximum
+IV. EXPERIMENT RUL value is 130. The training set of each case contains three
+source domains. Therefore, this part of the experiment contains
+In this section, the effectiveness of the proposed MS-DSN
+four cases, as shown in Table II.
+is evaluated through experiments on the remaining useful life
+2) N-CMAPSS: N-CMAPSS consists of millions of mon-
+(RUL) prediction of aircraft engines. The monitoring data,
+itoring data points representing run-to-failure degradation
+evaluation metrics, and detailed analysis of the experimental
+trajectories under real flight conditions. The dataset captures
+results, including performance and comparisons, are presented.
+engine operations under two distinct failure modes: the abnor-
+mal high-pressure turbine (HPT) mode and the more intricate
+low-pressure turbine (LPT) mode. For DG experiments, sub-
+A. Monitoring Data of Aircraft Turbofan Engines
+datasets DS01-DS07 were chosen. Each sub-dataset represents
+As shown in Fig. 4, aero-engines monitoring data are used different working conditions, leading to variations in the
+in the experiment for RUL prediction. This dataset contains distribution of collected data. The specific selection of training
+run-to-failure data of aero-engines. The RUL of an engine is and test sets is detailed in Table III. This task poses a more
+defined as the number of remaining operational cycles during challenging aspect of model learning and representation. In
+which the engine can continue functioning reliably. In this the realm of variable selection, four scene descriptors and
+experiment, the CMAPSS [29] and N-CMAPSS [30] aircraft 14 metrics are employed for RUL prediction. The 18 chosen
+turbofan engine degradation datasets are utilized. variables are outlined in Table IV.
+
+===== PAGE 7 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+JIA et al.: MULTISOURCE DSN FOR INDUSTRIAL INTELLIGENT MONITORING IN UNSEEN CONDITIONS 7
+TABLE III the form of
+DESCRIPTION OF EACH CASE OF EXPERIMENTS ON N-CMAPSS 8 N
+ˆˆˆˆˆ< X e−(yˆj −yj )/13 −1, yˆ
+j
+< y
+j
+Score = j=1 (14)
+N
+ˆˆˆˆˆ: X e−(yˆj −yj )/10 −1, yˆ
+j
+≥ y
+j
+.
+j=1
+C. Baseline Models
+TABLE IV This part provides a brief introduction to the baseline mod-
+SELECTED MEASUREMENTS AND SCENARIO DESCRIPTORS els employed for DG. Each baseline method can be concise
+OF N-CMAPSS described as.
+1) Empirical Risk Minimization: DG through ERM is
+accomplished by minimizing the empirical risk within each
+source domain, mitigating the impact on model performance.
+2) Domain Adversarial Neural Network: Domain adversar-
+ial neural network (DANN) [23] employs adversarial training
+for domain-invariant representations. The DANN framework
+is utilized here specifically to obtain domain-invariant repre-
+sentations of the source data.
+3) Correlation Alignment: Correlation alignment (CORAL)
+[31] minimizes the covariance shift among each source
+domains for distribution alignment.
+4) Mixup: Mixup [32] realizes DG by mixing data from
+various source domains to generate new data to expand the
+distribution of training data.
+5) Variance Risk Extrapolation: Variance risk extrapolation
+(VREx) [25] realizes DG by mitigating training risks and
+enhancing the homogeneity of training risks.
+B. Experimental Setting
+6) Representation Self-Challenging: Representation self-
+1) Model Details: The training process of each model challenging (RSC) [33] realize DG through an iterative process
+consists of up to 50 epochs, with a batch size set at 256 of challenging and discarding dominant features activated
+and a learning rate of 3e−4. Our network contains one sparse during training. This compels the network to focus on activat-
+preencoder, one shared encoder, K private encoders, K private ing the remaining labels-relevant features, thereby improving
+decoders, and one shared predictor (K is the count of source overall performance.
+domains). The preencoder expands the dimensionality of the
+data to 100 dimensions; the shared encoder, each private
+D. Experimental Results
+encoder and each private decoder are three-layer multihead
+To assess our proposed method in a cross-domain scenario,
+self-attention (four-head) with residual links; the shared pre-
+we utilize labeled training data from the source domain
+dictor is a two-layer perceptron (hidden layer dimension is
+for model training, and evaluate its performance with test
+128). The baseline comparison method, and the shared parts
+data from the target domain, measured in terms of RMSE
+of our proposed method all adopt the same network archi-
+and score. To establish the effectiveness of our approach,
+tecture details. To delve deeper into the model’s capabilities,
+it is recommended to set different loss weights for balanced we compare it with classic transfer learning methods such
+as DANN, CORAL, and mixup. Additionally, we include
+multitask learning. However, for the sake of simplicity, we set
+advanced methods like VERX and RSC for comparative anal-
+the hyperparameters in all loss functions to 1.
+2) Evaluation Metrics: The effectiveness of the proposed ysis. The experimental results presented are averages derived
+from ten randomly repeated experiments, providing a robust
+method is assessed by two metrics: root-mean-square error
+evaluation of the proposed method’s performance.
+(RMSE) and score metric. RMSE is defined as
+The results of the comparative experiments on CMAPSS are
+v shown in Table V and Fig. 5. It can be found that the perfor-
+u n
+RMSE = u t 1 n X (cid:0) yˆ j − y j (cid:1)2 . (13) mance of the proposed MS-DSN is better than all competing
+j=1 methods in various unknown scenarios. The error of MS-DSN
+is around 25, the maximum error of the other methods is
+RMSE treats larger and smaller RUL predictions equally. around 30, and the maximum error of Mixup is even close
+For practical applications, smaller RUL predictions may be to 40. DANN and CORAL are representative cross-domain
+more detrimental to the system. A fractional metric is thus transfer methods based on distribution alignment. These meth-
+introduced to impose more penalties on late predictions, in ods primarily emphasize the consistency of data distributions
+
+===== PAGE 8 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+8 IEEE TRANSACTIONS ON CYBERNETICS
+Fig. 5. Visualization of the RUL prediction results of FD004 test engine #248 by each method in case 1. The shaded region indicates the error margin
+between the prediction and the actual RUL values. (a) DANN. (b) CORAL. (c) Mixup. (d) VREx. (e) RSC. (f) MS-DSN.
+TABLE V
+PERFORMANCE COMPARISONS AMONG MS-DSN AND SEVERAL STATE-OF-THE-ART METHODS ON CMAPSS
+while overlooking the role of labels in multisource domain significant advantages over the second best method in these
+alignment. It may obscure valuable information relevant to two cases. Taking FD004 as an example, the errors of our
+downstream tasks. Therefore, their capabilities are limited in method are 50.66% and 14.29% lower than ERM and the
+scenarios such as case 2 where is apparent distribution shift. second-best method, respectively.
+Our method explicitly extracts domain-invariant information The results of the comparative experiment on the dataset
+through an external parallel domain private encoder, and uses N-CMAPSS are shown in Table VI. Since the difference
+labels to correct the features of the shared space. Therefore, in data distribution in different sub-datasets is not obvious,
+our method enables the model to obtain better generalization the DG effects of various baseline models are not much
+capabilities and can simultaneously preserve more informa- better than ERM. However, the performance of our method
+tion relevant to downstream tasks. Furthermore, we also has obvious advantages. We believe this is because, on the
+observe that DG methods do not always perform well on one hand, our method can filter out the influence of unique
+relatively complex data due to large shifts in the domain. But information in each domain; on the other hand, our method can
+MS-DSN can successfully generalize domain knowledge to enlarge the boundaries of data distribution and enhance DG
+distant domains. For example, FD002 and FD004 are relatively capabilities.
+complex sub-datasets, and various baseline models have rel- Generally speaking, MS-DSN can effectively extract invari-
+atively poor generalization effects. However, our method has ant information from multiple source domains, making the
+
+===== PAGE 9 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+JIA et al.: MULTISOURCE DSN FOR INDUSTRIAL INTELLIGENT MONITORING IN UNSEEN CONDITIONS 9
+TABLE VI
+PERFORMANCE COMPARISONS AMONG MS-DSN AND SEVERAL STATE-OF-THE-ART METHODS ON N-CMAPSS
+Fig. 7. Visualization of the domain shared representation of MS-DSN and
+the latent representation of DANN encoder. (a) MS-DSN. (b) DANN.
+SCS,” “w/o DREx,” and “DANN1,” respectively. In particular,
+“w/o SCS” refers to the model version for which without
+supervised comparative similarity (replaced by the Euclidean
+distance of the discrepancy), “w/o DREx” refers to the model
+version for which without DREx, and “DANN1” refers to
+Fig. 6. Case 1 visualization of domain-shared features and domain-private
+features in each sub-dataset of CMAPSS. (a) FD001. (b) FD002. (c) FD003. DANN with supervised contrastive similarity and DREx. The
+(d) FD004. results of the ablation study are presented in Table VII. While
+the accuracy of our method is not consistently the highest in all
+cases, it outperforms the version without a specific component
+model have strong generalization ability, and the generalization
+in most scenarios. Especially the comparison with DANN1
+and accuracy are better than those of existing models.
+shows that our MS-DSN architecture is of effectiveness in
+filtering domain-specific information and gaining insight into
+E. Visualization Analysis domain-invariant information. Thus, the effectiveness of these
+Fig. 6 shows the t-SNE visualization of domain-private three components are verified.
+features and domain-shared features in each sub-dataset of Besides, we verify the contribution of each loss function
+the CMAPSS dataset in Case 1. As can be seen from the in MS-DSN framework. We named the three variants of MS-
+figure, MS-DSN can effectively separate and decouple domain- DSN “w/o L ,” “w/o L ,” and “w/o L ,”
+reconstruct similarity diversity
+specific information and domain-shared information in the which represent the MS-DSN frameworks without loss func-
+original data, thereby filtering out information in the data that tion L , L , and L , respectively. It can
+reconstruct similarity reconstruct
+is irrelevant to downstream tasks, thereby realizing DG. It can be seen that in the MS-DSN framework, each calculation goal
+be seen from Fig. 6 that the distribution pattern of domain is very important. Removing any loss function will cause a
+shared features in the feature space is related to the changing significant drop in performance. However, it should be noted
+trend of the labels. that the results of these ablation experiments are better than
+Besides, for the FD004 test engine #248 of the test set of those of ERM or even DANN because our framework has
+Case 1, the domain shared representation of MS-DSN and more than one DG-capable component.
+the latent representation of DANN encoder are extracted by
+t-SNE and presented in Fig. 7(a) and (b), respectively. It can be
+G. Sensitivity Analysis
+seen from the figure that in the shared space of MS-DSN, the
+In this part, we evaluate the sensitivity of the proposed MS-
+distribution of features is related to the trend of labels; while
+DSN to the weights of individual loss functions. We focus
+there is no such correlation in the latent space of DANN.
+on the loss functions of each auxiliary task in the MS-DSN
+framework, namely L , L , and L . These
+reconstruct similarity diversity
+F. Ablation Studies
+loss functions are relevant to the updating of the model. We
+In this subsection, we verify the contribution of each com- conduct experiments on case1 of CMAPSS. For the weight of
+ponent in MS-DSN to DG through ablation experiments on each loss function, candidate values of 0, 0.001, 0.01, 0.1, 1,
+CMAPSS. We named the three variants of MS-DSN “w/o and 10 are assigned, respectively. Fig. 8 shows the results of
+
+===== PAGE 10 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+10 IEEE TRANSACTIONS ON CYBERNETICS
+TABLE VII
+ABLATION STUDIES OF MS-DSN ON CMAPSS
+REFERENCES
+[1] Z. Chen, Z. Song, and Z. Ge, “Variational inference over graph: Knowl-
+edge representation for deep process data analytics,” IEEE Trans. Knowl.
+Data Eng., vol. 36, no. 6, pp. 2730–2744, Jun. 2024, doi: 10.1109/
+TKDE.2023.3327415.
+[2] X. Zhou et al., “Spatial–temporal federated transfer learning with multi-
+sensor data fusion for cooperative positioning,” Inf. Fusion, vol. 105,
+May 2024, Art. no. 102182.
+[3] L. Ren, Z. Jia, T. Wang, Y. Ma, and L. Wang, “LM-CNN: A cloud-
+edge collaborative method for adaptive fault diagnosis with label
+sampling space enlarging,” IEEE Trans. Ind. Informat., vol. 18, no. 12,
+pp. 9057–9067, Dec. 2022.
+[4] Y.-N. Sun, W. Qin, H.-W. Xu, R.-Z. Tan, Z.-L. Zhang, and W.-T. Shi, “A
+multiphase information fusion strategy for data-driven quality prediction
+of industrial batch processes,” Inf. Sci., vol. 608, pp. 81–95, Aug. 2022.
+[5] W. Zheng and G. Chen, “An accurate GRU-based power time-
+series prediction approach with selective state updating and stochastic
+optimization,” IEEE Trans. Cybern., vol. 52, no. 12, pp. 13902–13914,
+Dec. 2022.
+Fig. 8. Experimental results with different weights of individual loss for case [6] H. Jiang, S. Zhang, W. Yang, X. Peng, and W. Zhong, “Integration of
+1 of CMAPSS. (a) Lrecontrust. (b) Lsimilarity. (c) Ldiversity. encoding and temporal forecasting: Toward end-to-end NOx prediction
+for industrial chemical process,” IEEE Trans. Neural Netw. Learn. Syst.,
+vol. 35, no. 3, pp. 2984–2996, Mar. 2024.
+[7] L. Ren, Z. Jia, Y. Laili, and D. Huang, “Deep learning for time-series
+the ablation experiment, which shows that the weights of each prediction in IIoT: Progress, challenges, and prospects,” IEEE Trans.
+loss function have little impact on the performance of MS- Neural Netw. Learn. Syst., vol. 35, no. 11, pp. 15072–15091, Nov. 2024,
+DSN. This may be due to the large enough number of epochs doi: 10.1109/TNNLS.2023.3291371.
+[8] J. Li, Y. Wang, Y. Zi, H. Zhang, and Z. Wan, “Causal disentanglement:
+in our experimental setting. MS-DSN is more robust in this
+A generalized bearing fault diagnostic framework in continuous degra-
+regard. Besides, when the weight is equal to 10 (the loss dation mode,” IEEE Trans. Neural Netw. Learn. Syst., vol. 34, no. 9,
+function is given a larger weight), the performance of the pp. 6250–6262, Sep. 2023.
+[9] L. Chen, Q. Li, C. Shen, J. Zhu, D. Wang, and M. Xia, “Adversarial
+model does not drop significantly, which shows that each
+domain-invariant generalization: A generic domain-regressive frame-
+optimization objective does not have a negative impact on DG. work for bearing fault diagnosis under unseen conditions,” IEEE Trans.
+In comparison, MS-DSN is sensitive to L . Ind. Informat., vol. 18, no. 3, pp. 1790–1800, Mar. 2022.
+reconstruct
+[10] Q. Qian, J. Zhou, and Y. Qin, “Relationship transfer domain general-
+ization network for rotating machinery fault diagnosis under different
+working conditions,” IEEE Trans. Ind. Informat., vol. 19, no. 9,
+V. CONCLUSION pp. 9898–9908, Sep. 2023.
+[11] F. Huang, J. Fu, and L. Zhang, “Bilateral co-transfer for unsupervised
+In this article, MS-DSN, a multisource DG method, is domain adaptation,” J. Autom. Intell., vol. 2, no. 4, pp. 204–217, Nov.
+proposed for adaptive industrial time-series prediction in 2023.
+[12] Z. Jia, L. Ren, H. Wang, and Y. Laili, “A two-stage privacy-preserving
+unseen conditions. The proposed MS-DSN projects data into
+domain adaptation for industrial time-series prediction,” IEEE Trans.
+domain-shared and -private parts to eliminate domain-specific Emerg. Topics Comput. Intell., vol. 9, no. 4, pp. 2846–2857, Aug. 2025.
+information; and uses supervised contrastive learning and [13] K. Li, J. Lu, H. Zuo, and G. Zhang, “Source-free multi-domain
+DREx to improve the similarity of representations of data in adaptation with fuzzy rule-based deep neural networks,” IEEE Trans.
+Fuzzy Syst., vol. 31, no. 12, pp. 4180–4194, Dec. 2023, doi: 10.1109/
+each domain properties and reduce sensitivity to widespread
+TFUZZ.2023.3276978.
+extreme distribution changes. We conduct comprehensive com- [14] Z. Jia, L. Ren, and Y. Tang, “A contrastive representation domain
+parisons between MS-DSN with several SOTA DG methods, adaptation method for industrial time-series cross-domain prediction,”
+IEEE Trans. Ind. Informat., vol. 21, no. 4, pp. 3236–3245, Apr. 2025.
+and the experimental results unequivocally demonstrate that [15] L. Ren, H. Wang, and Y. Laili, “Diff-MTS: Temporal-augmented condi-
+MS-DSN outperforms various methods significantly, and has tional diffusion-based AIGC for industrial time series toward the large
+satisfied robustness. model era,” IEEE Trans. Cybern., vol. 54, no. 12, pp. 7187–7197, Dec.
+2024.
+However, our method may be invalid when the source and
+[16] K. Zhou, Z. Liu, Y. Qiao, T. Xiang, and C. C. Loy, “Domain gener-
+target data are heterogeneous. In future work, we will explore alization: A survey,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 45,
+DG methods for heterogeneous data. no. 4, pp. 4396–4415, Apr. 2023.
+
+===== PAGE 11 =====
+
+This article has been accepted for inclusion in a future issue of this journal. Content is final as presented, with the exception of pagination.
+JIA et al.: MULTISOURCE DSN FOR INDUSTRIAL INTELLIGENT MONITORING IN UNSEEN CONDITIONS 11
+[17] J. Wang et al., “Generalizing to unseen domains: A survey on Lei Ren (Senior Member, IEEE) received the Ph.D.
+domain generalization,” IEEE Trans. Knowl. Data Eng., vol. 35, no. 8, degree in computer science from the Institute of
+pp. 8052–8072, Aug. 2022. Software, Chinese Academy of Sciences, Beijing,
+[18] J. Li, Y. Wang, Y. Zi, and Z. Zhang, “Whitening-Net: A generalized net- China, in 2009.
+work to diagnose the faults among different machines and conditions,” He is currently a Professor with the School of
+IEEE Trans. Neural Netw. Learn. Syst., vol. 33, no. 10, pp. 5845–5858, Automation Science and Electrical Engineering, Bei-
+Oct. 2022. hang University, Beijing, also with the Hangzhou
+[19] C. Zhao and W. Shen, “Adversarial mutual information-guided single International Innovation Institute, Beihang Univer-
+domain generalization network for intelligent fault diagnosis,” IEEE sity, Hangzhou, China, and also with the State
+Trans. Ind. Informat., vol. 19, no. 3, pp. 2909–2918, Mar. 2023. Key Laboratory of Intelligent Manufacturing System
+[20] B. Xia, K. Wang, A. Xu, P. Zeng, N. Yang, and B. Li, “Intelligent fault Technology, Beijing. His research interests include
+diagnosis for bearings of industrial robot joints under varying working neural networks and deep learning, time-series analysis, and industrial AI
+conditions based on deep adversarial domain adaptation,” IEEE Trans. applications.
+Instrum. Meas., vol. 71, pp. 1–13, 2022. Dr. Ren serves as an Associate Editor for IEEE TRANSACTIONS ON NEU-
+[21] T. Matsuura and T. Harada, “Domain generalization using a mixture RAL NETWORKS AND LEARNING SYSTEMS, IEEE/ASME TRANSACTION
+of multiple latent domains,” in Proc. AAAI Conf. Artif. Intell., vol. 34, ON MECHATRONICS, and other international journals.
+2020, pp. 11749–11756.
+[22] S. Sagawa, P. W. Koh, T. Hashimoto, and P. Liang, “Distributionally
+robust neural networks,” in Proc. Int. Conf. Learn. Represent., Apr. 2020,
+pp. 1–19.
+[23] Y. Ganin and V. Lempitsky, “Unsupervised domain adaptation
+by backpropagation,” in Proc. Int. Conf. Mach. Learn., 2015,
+pp. 1180–1189.
+[24] M. Arjovsky, L. Bottou, I. Gulrajani, and D. Lopez-Paz, “Invariant risk
+minimization,” 2019, arXiv:1907.02893.
+[25] D. Krueger et al., “Out-of-distribution generalization via risk extrapola-
+tion (REx),” in Proc. Int. Conf. Mach. Learn., 2021, pp. 5815–5826.
+[26] K. Bousmalis, G. Trigeorgis, N. Silberman, D. Krishnan, and D. Erhan,
+Zuo-Jun Max Shen (Member, IEEE) received the
+“Domain separation networks,” in Proc. Adv. Neural Inf. Process. Syst.,
+Ph.D. degree from the Department of Industrial
+vol. 29, Aug. 2016, pp. 1–9.
+Engineering and Management Sciences, Northwest-
+[27] G. Kang, L. Jiang, Y. Wei, Y. Yang, and A. Hauptmann, “Contrastive
+ern University, Evansto, IL, USA, in 2000.
+adaptation network for single- and multi-source domain adaptation,”
+He is a Chair Professor with dual appointments
+IEEE Trans. Pattern Anal. Mach. Intell., vol. 44, no. 4, pp. 1793–1804,
+in the Faculty of Engineering and the Faculty of
+Apr. 2022.
+Business and Economics, University of Hong Kong,
+[28] A. van den Oord, Y. Li, and O. Vinyals, “Representation learning with
+Hong Kong. He is an Emeritus Professor at the
+contrastive predictive coding,” 2018, arXiv:1807.03748.
+University of California at Berkeley, Berkeley, CA,
+[29] A. Saxena, K. Goebel, D. Simon, and N. H. W. Eklund, “Damage
+USA, and an Honorary Professor at Tsinghua Uni-
+propagation modeling for aircraft engine run-to-failure simulation,” in
+versity, Beijing, China. His main research areas
+Proc. Int. Conf. Prognostics Health Manag., 2008, pp. 1–9.
+include integrated supply chain design and management, operations manage-
+[30] S. Chatterjee and A. Keprate, “Exploratory data analysis of the N-
+ment, data-driven optimization algorithms and applications, energy systems,
+CMAPSS dataset for prognostics,” in Proc. IEEE Int. Conf. Ind. Eng.
+and transportation system planning and optimization.
+Eng. Manage. (IEEM), Dec. 2021, pp. 1114–1121.
+[31] B. Sun and K. Saenko, “Deep coral: Correlation alignment for deep
+domain adaptation,” in Proc. Comput. Vis. Workshops (ECCV). Amster-
+dam, The Netherlands: Springer, Oct. 2016, pp. 443–450.
+[32] H. Zhang, M. Cisse, Y. N. Dauphin, and D. Lopez-Paz, “Mixup: Beyond
+empirical risk minimization,” in Proc. Int. Conf. Learn. Represent., 2018,
+pp. 1–13.
+[33] Z. Huang, H. Wang, E. P. Xing, and D. Huang, “Self-challenging
+improves cross-domain generalization,” in Proc. 16th Eur. Conf. Com-
+put. Vision (ECCV). Glasgow, U.K.: Springer, Aug. 2020, pp. 124–140.
+Laurence T. Yang (Fellow, IEEE) received the
+B.E. degree in computer science and technology
+from Tsinghua University, Beijing, China, in 1992,
+Zidi Jia (Member, IEEE) received the Ph.D. degree
+and the Ph.D. degree in computer science from
+in pattern recognition and intelligent systems from
+the University of Victoria, Victoria, BC, Canada, in
+the School of Automation Science and Electrical
+2006.
+Engineering, Beihang University, Beijing, China, in
+He is a Professor with the Department of
+2025.
+Computer Science, St. Francis Xavier University,
+He is currently a Post-Doctoral Fellow with Bei-
+Antigonish, NS, Canada. His research was supported
+hang University. His research interests include deep
+by the National Sciences and Engineering Research
+learning, domain generalization, Industrial Internet
+Council, Canada (NSERC), and the Canada Founda-
+of Things, and industrial process monitoring.
+tion for Innovation (CFI). His research interests include parallel and distributed
+computing, embedded and ubiquitous/pervasive computing, and big data.

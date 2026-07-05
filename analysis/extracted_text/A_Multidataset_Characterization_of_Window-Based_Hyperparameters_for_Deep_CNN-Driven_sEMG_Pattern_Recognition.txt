@@ -1,0 +1,718 @@
+
+
+===== PAGE 1 =====
+
+IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024 131
+A Multidataset Characterization of Window-Based
+Hyperparameters for Deep CNN-Driven
+sEMG Pattern Recognition
+Frank Kulwa , Student Member, IEEE, Haoshi Zhang , Oluwarotimi Williams Samuel , Senior Member, IEEE,
+Mojisola Grace Asogbon , Member, IEEE, Erik Scheme , Senior Member, IEEE,
+Rami Khushaba , Senior Member, IEEE, Alistair A. McEwan , and Guanglin Li , Senior Member, IEEE
+Abstract—The control performance of myoelectric prostheses (window length and overlap) employed for the construction of raw
+would not only depend on the feature extraction and classification two-dimensional (2-D) surface electromyogram (sEMG) signals on
+algorithms but also on interactions of dynamic window-based hy- the performance of CNNs when used for motion intent decoding.
+perparameters (WBHP) used to construct input signals. However, Moreover,weexaminedtherelationshipbetweenthewindowlength
+the relationship between these hyperparameters and how they of the 2-D sEMG and three commonly used CNN kernel sizes.
+influence the performance of the convolutional neural networks To ensure high confidence in the findings, we implemented three
+(CNNs) during motor intent decoding has not been studied. There- CNNs, which are variants of the existing models, and a newly
+fore, we investigated the impact of various combinations of WBHP proposed CNN model. Experimental analysis was conducted using
+threedistinctbenchmarkdatabases,twofromupperlimbamputees
+and one from able-bodied subjects. The results demonstrate that
+Manuscript received 3 August 2023; accepted 27 October 2023. Date of
+the performance of the CNNs improved as the overlap between
+publication 14 December 2023; date of current version 26 January 2024.
+This work was supported in part by the Key-Area Research and Development consecutively generated 2-D signals increased, with 75% over-
+Program of Guangdong Province under Grant 2020B0909020004, in part by lap yielding the optimal improvement by 12.62% accuracy and
+the National Natural Science Foundation of China under Grant #62150410439, 39.60% F1-score compared to no overlap. Moreover, the CNNs
+in part by Guangdong Basic and Applied Research Foundation under Grant performance was better for kernel size of seven than three and
+#2023A1515011478, in part by the Science and Technology Program of Guang- five across the databases. For the first time, we have established
+dong Province under Grant #2022A0505090007, in part by the Ministry of with multiple evidence that WBHP would substantially impact the
+Science and Technology, Shenzhen under Grant #QN2022032013L, and in
+decoding outcome and computational complexity of deep neural
+part by the ANSO Scholarship for Young Talented Students, “The Belt and
+networks, and we anticipate that this may spur positive advance-
+Road” Innovative Talent Exchange Program for Foreign Experts under Grant
+ment in myoelectric control and related fields.
+DL2022024002L and Jinan 5150 Program for Talents Introduction. This article
+was recommended by Associate Editor X. Hu. (Frank Kulwa and Haoshi
+Index Terms—Convolution neural network (CNN), prostheses,
+Zhang contributed equally to this work.) (Corresponding authors: Oluwarotimi
+surface electromyogram (sEMG) signal, upper limb, window
+Williams Samuel; Guanglin Li.)
+This work involved human subjects or animals in its research. Approval length, window overlap.
+of all ethical and experimental procedures and protocols was granted by the
+Institutional Review Board of Shenzhen Institutes of Advanced Technology,
+ChineseAcademyofSciencesunderApplicationNo.SIAT-IRB-221115-H0626.
+I. INTRODUCTION
+Frank Kulwa and Haoshi Zhang are with the CAS Key Laboratory of Human- T HE inability of amputees to carry out basic and complex
+Machine Intelligence-Synergy Systems, Shenzhen Institute of Artificial Intelli-
+arm related tasks reduces their quality of life, which may be
+gence and Robotics for Society, Shenzhen Institute of Advanced Technology,
+Chinese Academy of Sciences, Shenzhen 518055, China, and also with the psychologically distressing. To restore limb functionality in am-
+Shenzhen College of Advanced Technology, University of Chinese Academy putees, prostheses driven by biosignals from which limb move-
+of Sciences, Shenzhen 518055, China (e-mail: frankkulwankulila@siat.ac.cn; ment intentions can be decoded, have been widely embraced
+zhanghaoshi@siat.ac.cn).
+[1], [2], [3]. Such signals can be collected either in invasive
+OluwarotimiWilliamsSamuelandMojisolaGraceAsogbonarewiththeCAS
+Key Laboratory of Human-Machine Intelligence-Synergy Systems, Shenzhen (implantation of sensors within human body [4], [5], [6]) or
+Institute of Artificial Intelligence and Robotics for Society, Shenzhen Institute noninvasive (placement of sensors on the skin surface human
+of Advanced Technology, Chinese Academy of Sciences, Shenzhen 518055, body [7], [8], [9]). Though different biosignals exist, surface
+China, and also with the School of Computing and Engineering, University of
+electromyogram (sEMG) is considered the most appropriate
+Derby, DE22 3AW Derby, U.K. (e-mail: samuel@siat.ac.cn; grace@siat.ac.cn).
+signal source for the control of prostheses and other miniaturized
+Erik Scheme is with the Institute of Biomedical Engineering, University of
+NewBrunswick,Fredericton,NBE3B5A3,Canada(e-mail:escheme@unb.ca). robots (such as exoskeleton for stroke patient rehabilitation)
+Rami Khushaba is with the Australian Centre for Field Robotics, Sydney due to its noninvasiveness, ease of acquisition, and capability
+University,Chippendale,NSW2008,Australia(e-mail:rkhushab@gmail.com). to offer rich set of motor information [10]. The stochastic
+Alistair A. McEwan is with the School of Computing and Engineering,
+nature of sEMG motivated the use of engineered features for
+UniversityofDerby,DE223AWDerby,U.K.(e-mail:a.mcewan@derby.ac.uk).
+GuanglinLiiswiththeCASKeyLaboratoryofHuman-MachineIntelligence- characterizing the underlying motion intent (MI) of amputees in
+Synergy Systems, Shenzhen Institute of Artificial Intelligence and Robotics traditional machine learning models [11], [12]. Besides, various
+for Society, Shenzhen Institute of Advanced Technology, Chinese Academy of studies have shown that raw sEMG signals are unsuitable for
+Sciences, Shenzhen 518055, China (e-mail: gl.li@siat.ac.cn).
+prosthetics control [8] and reiterated the need for manually en-
+Color versions of one or more figures in this article are available at
+gineered features since they are often in low-dimensional space
+https://doi.org/10.1109/THMS.2023.3329536.
+Digital Object Identifier 10.1109/THMS.2023.3329536 and can significantly reduce pattern recognition complexity.
+2168-2291 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 2 =====
+
+132 IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024
+However, such engineered features are computed based on sta- on the network’s performance as small size kernels are good
+tistical approaches that sometimes fail to capture relationships in mining fine features, which could be missed by large size
+across sEMG channels, leading to the loss of underlying motor kernels and vice versa. Therefore, it is important to look at their
+information [7]. To address this issue, deep learning methods influence in EMG decoding tasks.
+have been proposed for automatic feature learning and can be In an attempt to fill the abovementioned research gaps, this
+directly applied to raw two-dimensional (2-D) sEMG signals article thoroughly investigated the impact of 2-D signals con-
+for adequate extraction of relevant features across channels [9], structed from raw sEMG recordings using varied combina-
+[13]. tions of windowing parameters on the decoding performance
+The sEMG-based gesture classification task can be modeled of CNNs. Besides, the CNN models employed are simple and
+as a 2-D signal recognition problem using convolutional neural low memory enabling practical deployment in upper limb pros-
+networks (CNNs), where the input signal to the CNNs has a size theses. Also, we explored the effects of varying kernel sizes on
+of J × W (length x width). Many techniques have been used the classification performance of different CNN models. The ex-
+to construct 2-D signals from sEMG, which serve as input to perimentation was carried out using sEMG from three different
+deep learning models. For instance, 2-D signals have been con- databases comprising amputees and able-bodied individuals that
+structedbasedonspectrogramsobtainedfromshort-timeFourier are mostly used for EMG gesture characterization. Moreover,
+transforms [14], scalograms obtained from wavelet transforms the databases include both HD-sEMG and sparse multichannel
+[15], and construction from engineered features [16]. Other sEMG signals and contain various degrees of freedom move-
+methods include high-density sEMG (HD-sEMG) electrode ar- mentsassociatedwiththefinger,hand,wrist,andelbowgestures,
+ray topology (where the 2-D resembles an array of electrode which ensures proper coverage. The four primary contributions
+placement during data collection) [17], and from raw sEMG of this work are as follows.
+signal segments using overlapping time windows [18] (where 1) To provide insight on the deployment of novel and efficient
+the signal width is equal to the number of electrodes and the deep learning driven prostheses control scheme, this study
+length matches the segmentation window length). However, the explored the impact of the raw 2-D signals’ window length
+use of spectrogram, scalogram and 2-D from engineered features and overlap on the performance of CNNs.
+impose extra preprocessing time. While the raw EMG as input 2) We explore the effects of receptive window for different
+to CNNs represents a seamless and direct approach, several configurations of CNNs and how they influence the feature
+studies have leveraged this option towards attaining fairly decent learning on the raw 2-D signal.
+classification performance [16], [18]. This partly motivated us to 3) To aid the optimal selection of window parameters, we
+further explore the potential impact of 2-D signals constructed derived a rule of thumb on the relationship between kernel
+from raw EMG recordings on CNNs for movement intent de- sizes and window parameters.
+coding, which may be necessary in developing time-efficient 4) We proposed a novel variant of CNN model characterized
+and intuitive deep learning driven prosthetic control schemes. by low computational complexity with simple yet robust,
+Recent research has confirmed that 2-D signals’ temporal and accurate decoding performance.
+and spatial information can be used by CNN to extract long
+and short-term patterns present in sEMG recordings [17], [19],
+[20]. With respect to sparse and high-density surface EMG II. MATERIAL AND METHODS
+recordings, previous studies have proposed CNN-based models
+A. Description of the EMG Databases Utilized
+driven by 2-D signals of varied window length and overlap
+constructed from sEMG recordings. For instance, in developing In this study, we utilized three sEMG databases to validate
+a CNN model that adopts 2-D signals for movement intent our hypothesis and the performance of the CNNs as follows.
+decoding, overlaps of 0 ms, 90 ms, 10 ms, 10 ms, and 30 data Database 1 (DB1): The DB1 is the CapgMyo database (DB-a)
+points were applied using window lengths of 150 ms, 150 ms, [29], and it contains HD-sEMG data acquired at a sampling
+100 ms, 300 ms, and 150 data points by Bakircioglu and Özkurt frequency of 1000 Hz from 18 able-bodied subjects. The ac-
+[16], Tsinganos et al. [18], Atzori et al. [21], Rahimian et al. [22], quisition device had 8 modules of matrix-type (8 × 2) differ-
+and Gulati et al. [23], respectively. From these studies and other ential electrode arrays with silver wet electrodes, which were
+related works, it is unclear what combination of parameters in fixed around the right forearm. The first acquisition module
+terms of window length and overlap would yield the requisite was placed on the extensor digitorum communis muscle at
+2-D signals for optimal movement intent decoding (in terms the height of the radio-humeral joint and others were equally
+of accuracy and robustness) in CNNs-based pattern recognition spaced clockwise. Eight isotonic and isometric hand gestures
+schemes for multifunctional prostheses. Notably, previous stud- were involved, and were the subset of NinaPro database (DB3)
+ies have reiterated that variation in window-based hyperparame- [30]. There were 10 repetitions of each motion, each held for 3
+ters would substantially impact MI decoding and computational to 10 s. The movements were interspersed with a rest state of
+complexity of traditional machine learning models that employ around 7 s to avoid muscle fatigue, and only the preprocessed
+engineered features [24], [25], [26], and [27] without addressing data, which contains static part of the motion were used to ensure
+deep neural networks. In other words, systematic investigations correct match with the labels. To handle the noisy segment, a
+of the optimal combination of window-based hyper parameters second-order Butterworth band stop filter of 45–55 Hz was used
+for 2-D signal construction in deep neural networks (DNNs) while other observed artifacts were removed using a band-pass
+remains an open research question to the best of the authors’ filter of 20–380 Hz.
+knowledge. Database 2 (DB2): This database was acquired in-house from
+Convolution kernels act as the feature extraction phase for the four transhumeral amputees. The dataset was collected using
+CNN in which the network automatically learn low- and high- the HD-sEMG system (Refa 128 model, TMS International,
+level features [28]. The size of the kernel has a great influence Netherlands) with 32 monopolar electrodes and an amplifier
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 3 =====
+
+KULWA et al.: MULTIDATASET CHARACTERIZATION OF WBHP FOR DEEP CNN-DRIVEN SEMG PATTERN RECOGNITION 133
+Fig. 2. Framework for the construction of 2-D signals. The relationship
+between window length (W) and overlap (V) of any successive data segment
+Fig. 1. Electrode location and experiment setup on the amputee during sEMG exploited for constructing 2-D sEMG representation of size JxW is depicted in
+data collection for DB2. the figure. Where J is the number of channels i.e., Channel 1 (Ch1), Channel 2
+(Ch2) up to Ch(J).
+TABLE I
+PARAMETERS OF DATABASES DEPLOYED IN THIS STUDY B. Two-Dimensional Signal Construction and Windowing
+Technique
+The 2-D signals were constructed using a segmentation win-
+dow of dimension J × W, where W is the window length and
+J is the number of electrodes corresponding to 128, 32, and 12
+for DB1, DB2, and DB3, respectively. Precisely, a combination
+of various windowing parameters including window lengths
+(25 ms, 50 ms, 75 ms, 100 ms, 125 ms, 150 ms, 175 ms, and
+200 ms) and different overlaps (0% of W, which denotes no
+overlap, 25% of W, 50% of W, and 75% of W) were employed
+in constructing varied configuration of 2-D signals. The values
+of the windowing parameters were opted based on previous
+gain of 26.55. The electrodes were positioned on biceps brachii recommendations [24]. It is worth noting that, in this article,
+and triceps brachii of the individuals’ residual limbs in a matrix we denote the overlap as V. For instance, the overlap of 25% of
+of 4 × 8, as indicated in Fig. 1. Prior to the data collection, W is denoted as 0.25V, 50% of W is 0.50 V. A description of the
+the subjects were given written informed consent and they constructed 2-D signals based on combinations of windowing
+providedpermissionforthepublicationoftheirdataforscientific parameters is indicated in Fig. 2.
+and educational purposes. During data acquisition, a computer Subsequently, the 2-D signals were partitioned into training
+screen was placed in front of the participants and a picture of and test sets. Where a five-fold cross validation protocol was
+a particular gesture would be shown for the subject to follow followed. And each time, 80% of the data was used for train-
+(see Fig. 1). The five upper limb gestures involved were wrist ing while the unseen 20% was used for testing to avoid data
+supination, wrist pronation, no movement, hand close, and hand leakage (a key challenge in building machine learning models).
+open (HO). Meanwhile, each motion was held for about 5 s Before training, a Z-score normalization method was applied
+with a 5 s rest between two consecutive tasks. Each gesture to the training set to ease the CNN’s learning process [32]. For
+was repeated 5 times. The data was sampled at 1024 Hz while the testing set normalization, the mean value to subtract and
+50 Hz notch filter and band pass filter with cut-off frequencies the standard deviation to divide as obtained from the training
+10—500 Hz were applied to extract requisite signal compo- set were utilized for the normalization process of the test set.
+nents. The experiment was approved by the Institutional Review It is noteworthy that during the preliminary experiment, the
+Board of Shenzhen Institute of Advanced Technology, Chinese min–max [33] and Z-score normalization approaches were ex-
+Academy of Sciences. amined. Our choice on using Z-score normalization is based
+Database 3 (DB3): The third database denoted as DB3 is a on its consistent excellent movement intent decoding results.
+publicly available and known as NinaPro Database 3 [30] and it Additionally, it is important to note that data preprocessing and
+contains EMG recordings of 11 transradial amputees. The sparse the subsequent experiments were carried out separately for every
+multichannel sEMG signals were recorded via 12 electrode subject.
+channels positioned on the residual arm muscles of the amputee.
+The electrodes were located around the residual arm. We utilized
+C. Convolution Neural Networks
+exercise B, which contains 17 classes of movements comprising
+9 basic wrist movements and 8 isotonic isometric hand gestures. This study built four different CNN models to investigate
+Each movement gesture lasted 5 s with 6 repetitions, followed by the impact of varied configurations of 2-D sEMG. Among
+3 s of rest. We directly worked with the preprocessed data, which the four CNNs, Model1 has similar architecture to the model
+was sampled at 2000 Hz, filtered with a notch filter of 50 Hz and implementedinourpreviouswork[34].Meanwhile,Model2and
+a band pass filter of 20–450 Hz [31]. Table I Summarizes the Model3 are built as variants of existing models and the fourth
+difference in the parameters of the three databases used in this (Model4) is entirely proposed by the authors. The architectures
+study. of the models are as follows.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 4 =====
+
+134 IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024
+Model1: Model1 is built based on the CNN model imple-
+mented in our preliminary work [34]. Our decision for con-
+sidering this network is due to its simple structure and stable
+performance. In addition, it takes as input a shape that aligns
+with the shape of our 2-D sEMG representation (J x W).
+Model2: Inspired by the simplicity of the model proposed
+by Bakırcıog˘lu and Özkurt [16], we adopted its feature learn-
+ing convolution blocks in building our own CNN variant and
+replaced the flattening layer in Bakırcıog˘lu and Özkurt’s net-
+work with a global-max pooling, which comparably reduces the
+network parameters (to enhance its computational cost) and is
+not prone to overfitting [35]. Thus, the Model2 consists of three
+convolution blocks each having 80, 100, and 120 nodes with
+Fig. 3. Proposed multiscale convolution neural network (MS-CNN). D repre-
+similar values of kernel sizes, respectively. Succeeding each
+sents the dilation rate.
+convolution block is a batch normalization and a max-pooling
+layers that allows down sampling of the feature maps by half.
+The lower part of the network consists of the global max-pooling
+layer for feature reduction and a dense layer of 512 nodes for
+high-level feature learning.
+Model3: It is an improved version of the network proposed
+by Maufroy and Bargmann [36] that comprised two convolu-
+tion layers and a fully connected layer each having 100 nodes
+designed specifically for 1-D EMG signal processing. Thus, we
+came up with a variant of the network by replacing the 1-D
+convolution layers with 2-D convolution layers and discarded
+the dropout layers after each convolution except after the fully
+connected layer. Each convolution is followed by a batch nor- Fig. 4. Conceptualization of dilation: The convolution kernel (L) = 3 × 3 and
+malization and max-pooling layer of 2 × 2. Similar to Model2, its dilated filters when dilation rate (D) = 1, 2, and 3.
+feature reduction is achieved by using the global max-pooling
+layer. Because the networks are trained from scratch, we have the concatenation layer without dimension reshaping while
+applied weights initialization in both Model2 and Model3 to al- max-pooling is applied to extract the most essential joint
+low quick convergence and optimization of the networks [37]. It features. The second multiscale block (Block 2) has a similar
+should be noted that the classification in both networks (Model2 operation to Block 1.
+and Model3) is performed using a Softmax layer. The subsequent Block 3 contains two point-wise 1 × 1 con-
+Model4 (Multiscale CNN) abbreviated as MS-CNN: The con- volutions. These convolutions enable the network to learn more
+volution kernels can be treated as view windows of the network, about the joint features from the multiscale blocks while keeping
+large size kernels meaning that the network can view 2-D signal the number of network parameters low [41]. The lower part of
+at a large dimension (which includes both spatial information the network incorporates a global max-pooling layer, one fully
+across channels, and temporal information within channels) at connected layer of 128 nodes, and the classification layer that
+once and learn large grained features, likewise, small kernels can employs a Softmax function. Additionally, all the weights were
+model fine features of the signal [38]. Therefore, in this study, initializedusingarandomuniforminitializer.Thekeyoperations
+we proposed a MS-CNN model, which combines the advantage of the proposed Model4 are described in Sections II-C1) and
+of small and large size kernels to improve the classification II-C2).
+performance by learning both fine and large-grained patterns 1) Dilated Convolution Layer for Multiscale and Memory
+from the signal while keeping the network parameters as low as Efficiency: Dilated convolution layer is a layer that uses larger
+possible. Moreover, inspired by the dilated convolution kernel 2-Dfilterstoextendthestandardconvolutionlayer. Fig.4depicts
+concept [39], we have utilized them as core layers to achieve the the conceptual representation of a typical dilation process in
+multiscale task. The architecture of the proposed network herein the context of the proposed MS-CNN. In order to optimize
+referred to as Model4 is presented in Fig. 3. the number of network parameters, traditional CNNs exploit
+The essential functional layers in the MS-CNN (see Fig. 3) convolution with small filters (2 × 2 or 3 × 3). However, di-
+are the multiscale block 1 and block 2 composed of dilated lated convolution filters are an easy approach to generating
+convolution layers at different scales (dilation rates) to enable an a CNN with large filters such as 5 × 5, 7 × 7. while keeping
+exponential increase of large receptive fields without loss of out- the parameters similar to 2 × 2 or 3 × 3 kernels. A dilated
+put resolution [40]. The input to the network is fed to block1 via convolution with an enlargement rate of d places d − 1 zeros
+two means including the upper and lower paths with each having in between successive filter values, which results in enlarging
+its own scales. Meanwhile, the upper path contains convolution the size of a L filter to [ L + (L − 1)(d − 1)(d − 1)]. It should
+with kernel size = 3 and dilation = 1 to model fine features. be noted that the quantity of nonzero parameters remains equal
+The lower path contains convolution with kernel size = 3 and as before. In addition, the dilated filters significantly expand
+dilation = 4, which is equivalent to the conventional kernel of CNN’s receptive field, allowing it to capture more contextual and
+size = 9 with output resolution equivalent to 3 × 3 convolution. spatialinformation[42].Asaresult,itenablesflexiblemultiscale
+Such a large kernel can learn coarse (general) features from contextual information aggregation while maintaining the same
+the input. The outputs of the two paths are combined by resolution.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 5 =====
+
+KULWA et al.: MULTIDATASET CHARACTERIZATION OF WBHP FOR DEEP CNN-DRIVEN SEMG PATTERN RECOGNITION 135
+TABLE II TABLE III
+NUMBER OF EPOCHS FOR EACH MODEL AND DATABASE EXPERIMENTAL ANALYSES PERFORMED FOR THE THREE PARAMETERS FOR
+DIFFERENT MODELS (THE PARAMETERS WERE THE SAME FOR EVERY
+SUBJECT)
+2) Handling Internal Covariant Shift Within the MS-CNN:
+A major challenge of nonstationary signals such as the sEMG
+is the lack of a common distribution, which sometimes result myoelectric pattern recognition. Additionally, to verify the sta-
+in internal covariant shift within the network [43]. To resolve tistical significance of the proposed method, a nonparametric
+this issue, batch normalization layers were introduced after Friedman’s test was conducted followed by Dunn’s post hoc
+each convolution block, and the exponential linear unit (ELU) test. The definitions for the metrics are indicated in
+activation function was leveraged afterwards in requisite layers. TP + TN
+Thus, the ELU activation function is expressed mathematically, Accuracy = (2)
+TP + FP + TN + FN
+as shown in
+(cid:2) 2TP
+f ELU (x k ) = ∝ x k (exp (x ) − 1) ( (x x k > ≤ 0 0 ) ) (1) F1 − score = 2TP + FP + FN . (3)
+k k
+From (2) and (3), true negative (TN) and true positive (TP)
+where x k is the filter output in the kth channel and ∝ represents are the number of accurately classified negative and positive
+a parameter to control the value to which an ELU saturates for
+samples, respectively. The number of positive cases classified as
+negative inputs. In this study, the default value ∝= 1 was con-
+negative is a false negative (FN), while the number of negative
+sidered. For negative inputs, the ELU activation function returns
+samples predicted as positive is false positive (FP).
+negative values, as a result its mean (average) outputs approach
+zero than that of ReLU. Hence, the ELU activation function
+can improve network learning [44]. Thus, in the MS-CNN, III. RESULTS AND ANALYSIS
+each pointwise convolution is followed by an ELU activation
+A. Analyzing the Impact of Window Length and Overlap on
+function.
+the Performance of the CNNs.
+In this section, we investigated whether or not the 2-D signals
+D. Experimental Setups
+constructed from varied combinations of window length (W)
+Since the Adam Optimizer [45] demonstrated the best net- and overlap (V) would impact the decoding performance of
+work performance (in our preliminary/pilot experiments of find- CNNs. For each experiment, the W was kept constant while
+ing the optimal hyperparameters for the models) compared to varying the V and vice versa. And the corresponding signals
+the stochastic gradient descent optimizer [46], all the described were used to train the built CNNs described in Section II-C. For
+models were trained using Adam Optimizer with a learning instance, 2-D signals obtained from W of 175 ms and an overlap
+rate of 0.0001. It should also be noted that at least one subject of “75% of W” were employed to train and test a CNN with
+from each DB was used to get the optimal hyperparameters a kernel size of 3. Similarly, the impact of other combinations
+for the models during preliminary experiments. Besides, due of W and V across kernel sizes on the CNNs was examined.
+to its superior performance in multiclass tasks, the categorical Meanwhile, the experiments were carried out for each of the
+cross-entropy [47] was utilized as the loss function. The number databases described in Section II-A and the obtained results are
+of epochs for each model was set depending on the character- presented as follows. Table III summarizes the overall analyses
+istics of the dataset in each database, as indicated in Table II. per subject. Because the results for all three kernels (3, 5, and 7)
+Thus, the number of iterations/epochs was varied in every model show a similar trend, we only presented the results for kernel size
+separately to allow optimal convergence while leaving out only of 3. The average motion classification performance for every
+the effects of the studied parameters (overlap, window length, combination of window parameters (W versus V) across kernel
+and kernel sizes) to be observed. sizes and subjects for the different CNNs for Database 1 (DB1)
+To analyze the impact of kernel size on the performance of are presented in Fig. 5 in accuracy and Table IV in F1-score.
+the CNNs per time, the same size of the kernel was applied to all Analyzing the results in [see Fig. 5(a)], it can be seen that
+convolution layers of the models. Hence, we utilized kernel sizes the accuracy in every CNN improves when the percentage of
+of 3 × 3, 5 × 5, and 7 × 7 since they are the basic kernels that overlap (V) increases at constant window length (W) and kernel
+have been employed in prior studies and yielded relatively good size (K). For instance, the accuracy of Model1 at W = 25 ms
+performances [14], [16], [18], [21], [22]. It should be noted that increases from 97.22%, 97.79%, 98.32%, to 98.74% when V
+Model4, utilizes kernels with resolution equivalent to 3. Thus, increases from 0 V, 0.25 V, 0.50 V, to 0.75 V, respectively. This
+it was not included in experiments involving the variation of indicates a significant improvement upon statistical analysis re-
+kernels 5 × 5 and 7 × 7. sults when comparing overlap 0 V and 0.75 V (p-value: 7x10−6).
+Evaluation Measures When investigating the effects of varying W at constant V in a
+To analyze the performance of the different networks, we particular model, the results show no considerable difference.
+used benchmark evaluation metrics that include accuracy and For instance, in Model1, the performances at the overlap of
+F1-score, as they have been widely adopted in the field of 0.75 are 98.74%, 98.88%, 98.84%, 98.86%, 98.84%, 98.74%,
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 6 =====
+
+136 IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024
+(a) (b)
+Fig. 5. Classification accuracy of Model1, Model2, Model3, and Model4, when they are applied to DB1. (a) Each subpart in the graphs contains results of all
+models at the same window length and varied overlaps 0 V, 0.25 V, 0.50 V, and 0.75 V, which are equivalent to 75% of W, 50% of W, 25% of W, and 0% of W.
+Note: Window length (W) unit is in millisecond (ms). (b) Average classification results across window lengths. (a) The classification accuracy for every window
+length at varied overlaps. Kernel = 3. (b) Average accuracy accross window lenghts. Kernel = 3.
+TABLE IV
+CLASSIFICATION F1-SCORE OF MODEL1, MODEL2, MODEL3, AND MODEL4 AT KERNEL SIZE=3 WHEN APPLIED ON DB1
+98.79%, and 98.91% at W of 25 ms, 50 ms, 75 ms, 100 ms, B. Analyzing the Effect of Network Receptive Fields Against
+125 ms, 150 ms, 175 ms, and 200 ms, respectively. To further the Generated 2-D sEMG Signals.
+examine this phenomenon, the F1-score results in Table IV also
+show that the model’s performance improved by increasing the The effect of each model’s kernel size on different 2-D
+percentage of overlap at constant window length. Similarly, the sEMG signals constructed using varied windowing parameters
+average results displayed in Fig. 5(b)(accuracy) and Table IV was investigated in this section. The experiments were carried
+(F1-score), show that the overlap of 75% (0.75 V) achieved out by varying kernel sizes (3, 5, and 7) while keeping each
+much better classification results for upper limb MI decoding window length constant and the networks were configured to
+irrespective of the window length. utilize a specific kernel size per training phase. Due to the
+To further validate the abovementioned results, we conducted relatively stable and higher performances observed when the
+the experiments using amputee databases (D2 and DB3) whose overlap was 75%, only this overlap was reported in this section
+results are presented in Figs. 6 and 7 in accuracy, and Table V for brevity. Moreover, due to the architecture of Model4, which
+and 6 in F1-score, respectively. The accuracy results in Figs. 6 only incorporates kernels with a resolution equivalent to 3, it was
+and 7(for DB2 and DB3, respectively), show that the perfor- excluded from the analysis in the section for a fair comparison.
+mance of all the networks increases with an increase in overlap Thus, the F1-score results for three models at different kernel
+at a fixed window size per time with statistical significance sizes when 2-D signals were generated from DB1, DB2, and
+of p = 4.0x10−6, 3.0x10−6, 3.0x10−6, 7.9x10−5 for model1, DB3 are presented in Fig. 8.
+model2, model3, and model4 in DB2, respectively. While Based on analysis of the results for DB1 presented in Fig. 8(a),
+p = 3.62x10−4, 2.4x10−5, 2.8 x10−5, 8.26x10−3 were observed in general, the kernel size of 7 yields better classification per-
+in DB3 for model1, model2, model3, and model4, respectively, formance across the networks (Model1, Model2, and Model3)
+when comparing the results of overlap 0v and 0.75. Also, the as the window length increases from 25 ms to 200 ms.
+F1-score values in Tables V and VI depict similar trend, fur- Also, the trend of increment for kernel sizes of 3, 5, and 7 can
+ther corroborating the phenomenon observed for the accuracy be observed to be similar in all the models except at window
+metrics. 175 in Model1 and Model2, and window 125 in Model3, where
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 7 =====
+
+KULWA et al.: MULTIDATASET CHARACTERIZATION OF WBHP FOR DEEP CNN-DRIVEN SEMG PATTERN RECOGNITION 137
+(a) (b)
+Fig. 6. Classification accuracy of Model1, Model2, Model3, and Model4, when they are applied to DB2. (a) Each subpart in the graphs contains results of all
+models at the same window length and varied overlaps 0 V, 0.25 V, 0.50 V, and 0.75 V, which are equivalent to 75% of W, 50% of W, 25% of W, and 0% of W. Note:
+Window length (W) unit is in millisecond (ms). (b) Average classification results across window lengths. (a) Classification accuracy of every window length at
+varied overlaps. Kernel = 3. (b) Average accuracy accross window lengths. Kernel = 3.
+(a) (b)
+Fig. 7. Classification (in accuracy) of Model1, Model2, Model3, and Model4, when they are applied to DB3. (a) Each subpart in the graphs contains results of
+all models at the same window length and varied overlaps 0 V, 0.25 V, 0.50 V, and 0.75 V, which are equivalent to 75% of W, 50% of W, 25% of W, and 0% of
+W. Note: Window length (W) unit is in millisecond (ms). (b) Average classification results across window lengths. (a) Classification accuracy for every window
+length at varied overlaps. Kernel = 3. (b) Average accuracy accross window lengths. Kernel = 3.
+TABLE V
+CLASSIFICATION F1-SCORE OF MODEL1, MODEL2, MODEL3, AND MODEL4 AT KERNEL SIZE=3 WHEN APPLIED ON DB2
+kernel 5 recorded an average F1-score value that is better than is no significant and consistent (increase) effect when varying
+that of kernel 7. The average performance shows that kernel size window length (at constant kernel) in the network’s performance
+of 3 led to the least classification results in all the CNNs. Besides, in this database (DB1) except from window 25 to 50 ms for
+the statistical analysis between kernel 3 and 7 show a significant Model1, and from 25 to 75 ms for Model2 and Model3.
+improvement of p = 0.9.92x10−4, 1.30x10−3, and 1.83x10−2. By closely analyzing the variation of kernel sizes and window
+Although the impact is realized when varying kernel sizes, there lengths for DB2 in Fig. 8(b), an increase in the performance of
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 8 =====
+
+138 IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024
+TABLE VI
+CLASSIFICATION F1-SCORE OF MODEL1, MODEL2, MODEL3, AND MODEL4 AT KERNEL SIZE=3 WHEN APPLIED ON DB3
+Fig. 8. Classification performance of Model1, Model2, and Model3 while varying the network kernels (3, 5, and 7) at different 2-D signal lengths (W) of 25, 50,
+75, 100, 125, 150, 175, and 200 of DB1, DB2, and DB3. AV is the average results across all window lengths. Note: Window length (W) unit is in millisecond
+(ms). (a) Variation of kernel sizes and window lengths in DB1. (b) Variation of kernel sizes and window lengths in DB2. (c) Variation of kernel sizes and
+window lengths in DB3.
+every model is realized when the size of kernels increases from impact in the performance of CNNs especially in Model2 and
+3, 5 to 7. The observation in this database shows that the use Model3 where the graphs show a positive gradient with the
+of large-size kernels improves the CNN’s performance signif- increase in window lengths for all window sizes (from 25 ms
+icantly (with p<0.05 in all models) regardless of the window to 200 ms) in Model2, and from 100 ms to 200 ms in Model2 at
+length. Moreover, the variation of window lengths shows an constant kernel size.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 9 =====
+
+KULWA et al.: MULTIDATASET CHARACTERIZATION OF WBHP FOR DEEP CNN-DRIVEN SEMG PATTERN RECOGNITION 139
+From the results illustrated in Fig. 8(c) for DB3, the perfor-
+manceofeverymodelincreaseswiththeincreaseinkernelsizeat
+constant window length. Although the database contains signals
+from amputees, kernel = 7 has achieved good performance.
+Comparing the results of kernels 7 and 3 a significant increase
+in the performance of the models was observed for DB3 with
+p<0.05 in Model 1 and Model3. In that respect the maximum
+improvement of 18.46% is observed in Model1 with a window
+length of 125 ms, while 8.35% is observed in Model2 with a
+window of 75 ms, and 31.75% in Model3 with a window of
+50 ms. Contrary to previous databases (DB1 and DB2), the
+effects of increasing window length at constant kernel signif-
+icantly increase the performance of the networks when DB3
+was utilized. For example, the results in Model1 with a kernel
+of 3 improved from 47.48%, 57.81%, 62.42%, 65.42%, 67.09%,
+69.29%, 71.32%, to 72.77% F1-score at window lengths of
+25, 50, 75, 100, 125, 150, 175, and 200 ms, respectively. This
+observation correlates with the previous study, which shows that
+the impact of window length is more evident in a small number
+of channels [26].
+C. Analysis of Individual Limb MI Across Window Overlaps
+and Kernel Sizes
+The analysis in the previous sections only presents an
+overview of motion classification outcomes with respect to
+varied combinations of window lengths, overlaps (V), and ker-
+nel sizes (K). Thus, it is necessary to look into the effects of
+these parameters on the classification performance of individual
+classes of movement. Hence, for each of the studied databases,
+the impact of kernel size and overlap on the categorization
+of a certain class of motion is described in this section. It is
+Fig. 9. Confusion matrices for Model1 on classification performance across
+noteworthy that the results of W = 200 were considered due eachmotionintentioninDB1,DB2,andDB3.(a)Classificationperformancefor
+to its high performances (as indicated in Section III-B) and every motion intent in DB1. M1 M8 represent the 8 motion intents in DB1. (b)
+only Model1 was presented because the results in other models Classification performance for every motion intent in DB2. Where, the output
+motions in DB2 are, wrist supination (WS), wrist pronation (WP), no movement
+follow the same trend. Additionally, the confusion matrices for
+(NM), hand close (HC), and hand open (HO). (c) Classification performance of
+the average results across all subjects are presented for the lowest
+Model1 for every motion in DB3. H1 H17 represents the 17 gestures in DB3.
+performing combination (Kernel = 3 and overlap of 0 V) and
+highest performing combination K = 7 and overlap = 0.75 V.
+The impacts of window parameters on each MI classification D. Analysis of Time Delay of the CNNs for Varied Window
+were examined in DB1, DB2, and DB3 and the results are Parameters of 2-D sEMG Signals
+presented in Fig. 9.
+In this section, we quantified the corresponding latency ef-
+Considering the analysis in Fig. 9(a) for DB1, it can be seen
+ficiency of the CNNs when the constructed 2-D sEMG signals
+that most of the individual gestures have attained results below
+80.00% at the lowest combination (K = 3 and overlap of 0%),
+were applied. In this case, the response time (T e) is an essential
+parameter that reflects the delay observed when the CNN model
+however, the application of kernel = 7 and overlap of 75%
+is deployed in a prosthesis for use in practical settings. This
+led to significant improvement in MI classification performance
+parameter could be seen as a function of the amount of time taken
+(above 98.00%) in all gestures.
+to decode a MI task from a single trial evaluation. The previous
+Likewise, the investigation across individual limb MI task
+studies investigated the microcontroller delay time when the
+in the amputee database (DB2) in Fig. 9(b) shows that the
+prosthesis is in use and found that it can be computed using
+classification performances of all gestures were improved from
+the relationship in (4) [26], [24], [25].
+below 74.00% to above 88.00% for all gestures when the lowest
+combination was replaced by the highest combination. 1 1
+The same trend is observed in Fig. 9(c) for DB3, where DT = 2 W + 2 V + T e (4)
+the application of 75% overlap and kernel of 7 has achieved
+performances above 86.00%. This demonstrates that networks where DT is the microcontroller delay time, W is the window
+at kernel = 7 and the 2-D sEMG signals with a 75% overlap length, V is the overlap, and T e is the response time of CNN
+would be a perfect combination for characterizing sEMG signal (from preprocessing the sEMG and generation of 2-D signals
+patterns associated with these classes of hand gestures. to yielding a decision). Thus, (4) was utilized to compute the
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 10 =====
+
+140 IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024
+TABLE VII IV. DISCUSSION
+DELAY TIME (IN SECONDS) OF A SINGLE TRIAL OF MOVEMENT ON DB1
+This work investigated the relationship between the length of
+the 2-D sEMG signal window and the overlap, which can pro-
+duce the network’s best performance. We also studied how CNN
+kernel sizes affect the network’s performance on classification
+tasks when raw 2-D sEMG signals constructed using different
+combinations of window length and overlaps were used as input
+to the CNN. The investigation considered four different kinds
+of CNN models. It should be noted that, although this study
+focused on raw EMG as input to the CNN, we also acknowledge
+the potential of using other forms of inputs to the CNN such as
+spectrograms [48].
+Specifically, the results presented in Section III-A demon-
+strated the effects of window overlap and window length of
+TABLE VIII the generated 2-D signals on the performance of the CNNs. In
+AVERAGE DELAY TIME (SECONDS) OF A SINGLE TRIAL OF MOVEMENT IN DB2 general, the results in Fig. 5 and Table IV, Fig. 6 and Table V,
+and Fig. 7 and Table VI for DB1, DB2, and DB3, respectively,
+show that the performance of the CNNs is greatly influenced
+by the amount of overlap in the generated 2-D signals. Interest-
+ingly, the highest overlap achieved the maximum improvement
+of 20.91% in DB1, 31.70% in DB2, and 39.60% F1-score in
+DB3. Further analysis is presented in Section III-C (see Fig. 9),
+which depicts the effects of varying window overlaps and kernel
+sizes on the individual motion intention in Fig. 9(a)(for DB1),
+Fig. 9(b)(for DB2), and Fig. 9(c)(for DB3). The classification
+performances across individual motion intents show that 75%
+(0.75 V) of signal overlap has achieved higher performances
+in all gestures compared to 0% overlap (0V). This, emphasizes
+TABLE IX
+that the use of 2-D sEMG signal with large overlaps can achieve
+AVERAGE DELAY TIME (SECONDS) OF A SINGLE TRIAL OF MOVEMENT IN DB3
+reasonable and practical results for CNN.
+On the other hand, the results in Section III-B show that the
+effect of window length of 2-D sEMG signals becomes signifi-
+cant when the number of channels decreases. In that regard, the
+impacts of varying window lengths were not realized when DB1
+with 128 channels (signals of size Wx128) was used, as indicated
+in Fig. 8(a). The effect started to show up in DB2 (32 channels)
+in Fig. 8(b). A consistent and positive impact of window length
+is observed in Fig. 8(c) when DB3 (which uses 2-D signals
+from 12 channels) was deployed. This finding corroborates the
+previous work [26], on engineered features, which also showed
+that the effects of window length increase with the decrease in
+the number of channels. This relationship is likely described by
+latency(programexecutiontime)oftheCNNsbuiltbasedonvar- the feature space in nondense channels (i.e., 12 channels in DB3)
+ied combination of window parameters across the kernel sizes, that provide less spatial information, which on the other hand can
+as shown in Tables VII, VIII, and IX, for the three databases be compensated by additional temporal information provided by
+(DB1, DB2, and DB3), respectively. longer window lengths. But longer window lengths provide less
+By closely analyzing the results across one trial of movement benefit to large-channel clusters (i.e., 128 channels in DB1 and
+in Tables VII, VIII, and IX, it can be seen that the delay time 32 channels in DB2) that are already more adequately distributed
+decreases with a decrease in the overlap. The overlaps of 75% in feature space.
+have the highest computation times. Moreover, the increase The CNN’s kernel can be thought of as the network’s eye; the
+in kernel size also increases the inference time. DB2 (see Ta- larger the kernel, the larger the network’s receptive field, allow-
+ble VIII) has the highest times relative to other databases. While ing it to see more of the signal and identify more widespread
+the delay times in DB1 (see Table VII) are all (except for W spatial patterns (features), whereas a smaller kernel size iden-
+= 50, 75, and 200 ms at overlap 0.75 V) within an acceptable tifies finer features [22]. The results attained in Fig. 8 indicate
+range for the practical application of the prostheses, which is that the increase in kernel size improves the CNN’s performance
+stated to be below 200 ms [24]. All delay times in DB3 (see by a significant margin at constant window length, with the
+Table IX) are within the acceptable range. Therefore, when con- peak performance attained by kernel = 7. This implied that
+sidering the combination of both accuracy and time efficiency the patterns of the sEMG signals can be modeled over a large
+of the CNNs for prostheses-based applications, networks with spatial dimension of the signal [49]. Besides, a wide field of view
+kernel = 7 and an overlap of 50% would yield reliable operations allows the network to learn hidden temporal connectivity within
+in all databases (below 200 ms) and 75% overlap for DB3. the signal [22]. Hence, it can model both spatial and temporal
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 11 =====
+
+KULWA et al.: MULTIDATASET CHARACTERIZATION OF WBHP FOR DEEP CNN-DRIVEN SEMG PATTERN RECOGNITION 141
+patterns of the signal. This provides us with an insight that it manufacturing the prostheses, a combination of 75% overlap
+may be essential to consider shallow networks but with large with shallow CNN but large kernel sizes (such as 7) would
+kernels to have classifiers with high accuracy, which are time provide considerably high accuracy, time, and memory effi-
+and memory efficient. ciency. These findings will help assist prostheses manufacturers
+Additionally, when we compare the general results across indevelopingmoreefficientsEMG-basedgesturerecognitional-
+different databases between the amputees-based database (DB2 gorithms. The newly proposed CNN model yielded significantly
+and DB3) and the database containing the able-bodied subjects’ better motor decoding performance than others tested, thus, its
+data (DB1). The results obtained in DB1 in all experiments are deployment in prosthetics and other fields such as rehabilitation
+relatively higher than in DB2 and DB3. This could be due to the control systems could facilitate multifunctional and intuitive
+high quality of the signals collected from able-bodied subjects EMG-PR control schemes. Finally, for the first time, we have
+contrary to the amputee subjects, whose signal qualities are been able to establish with substantial evidence through multiple
+normally low due to limited residual muscles [50]. However, the experiments that window-based hyper-parameters substantially
+applicationofahighpercentageofoverlaps(particularly75%)in impact the decoding outcome and computational complexity of
+the generated 2-D signals has improved the classification results deep neural networks. In general, we anticipate that this novel
+of DB2 and DB3 to an acceptable level in all Models. Therefore, finding may spur positive development in myoelectric control
+a combination of 75% overlap and large kernels such as 7 may and related fields.
+have the potential to realize the practical use of CNN-based Transfer learning, where a pretrained model is fine-tuned on a
+prostheses. small dataset from the end-application, is an important technique
+Furthermore, we estimated the possible delay time of the when using little data (especially human data such as with EMG)
+prosthesis microcontroller based on CNNs in relation to the for training deep learning models. In that respect, due to their
+window length, overlap, and kernel size on a single trial of simplicity and good performance, we anticipate that the CNN
+movement, as indicated in Tables VII, VIII, and IX. The trend models proposed in this study can be useful for transfer learning
+shows that the delay time increases with an increase in overlap of parsimonious models in EMG-related fields/tasks such as
+and kernel sizes. Besides, we discovered that when considering intersubject and interlimb/hand domain adaptation.
+efficiency in time and accuracy, an overlap of 50% and a kernel Despite the merits of the findings observed in this study,
+size of 7 can give an ideal response in all tested databases but the analyses were based on offline experiments. Consequently,
+with slightly low accuracy compared to 75% overlap, which there is still room for improvement, particularly in the aspect of
+gives the highest accuracy (in all databases) with slightly low incorporation of hyperparameters and investigating the variation
+efficiency in time, particularly in DB1 and DB2. Hence, such a of window parameters in the performance of the CNN models in
+tradeoff between overlaps of 50% and 75% could be taken into an online setting. In our future study, we hope to further validate
+account by the prosthesis manufacturers. In general, the analysis the findings of the study and the performance of the proposed
+presented in this study leads to the following rule of thumb: The CNN network in an online setting, taking factors that may
+overall decoding performance of convolutional neural networks impact the real-time control performance of the multifunctional
+is observed to be highly dependent on the window based hyper- prostheses into consideration.
+parameters including overlap and kernel size, which validates
+our hypothesis.
+Finally, we compared the relative performance of the pro-
+posed model MS-CNN (Model4) and other models, which have
+been used in the study (Model1, Model2, and Model3). Con- REFERENCES
+sidering the average classification results depicted in Figs. 5(b),
+6(b), and 7(b), it can be observed that the proposed Model4 [1] E. Nsugbe, C. Phillips, M. Fraser, and J. McIntosh, “Gesture recognition
+fortranshumeral prosthesiscontrol usingEMGand NIR,” IETCyber-Syst.
+achieved the highest performances in all overlaps in DB1 [see
+Robot., vol. 2, no. 3, pp. 122–131, 2020.
+Fig. 5(b)], in DB2 [see Fig. 6(b)] for all overlaps except overlap [2] S. Pancholi and A. M. Joshi, “Electromyography-based hand gesture
+of 75%, and in DB3 [see Fig. 7(b)] all overlaps except for overlap recognition system for upper limb amputees,” IEEE Sensors Lett., vol. 3,
+of 75%. The stable performances exhibited by Model4 across no. 3, Mar. 2019, Art. no. 5500304.
+[3] N. N. Unanyan and A. A. Belov, “Design of upper limb prosthesis using
+all databases suggest that the proposed Model4 would be more
+real-time motion detection method based on EMG signal processing,”
+suitable for decoding sEMG based motion intents.
+Biomed. Signal Process. Control, vol. 70, 2021, Art. no. 103062.
+[4] J.M.Hahne,D.Farina,N.Jiang,andD.Liebetanz,“Anovelpercutaneous
+electrode implant for improving robustness in advanced myoelectric con-
+V. CONCLUSION trol,” Front. Neurosci., vol. 10, 2016, Art. no. 114.
+[5] T.S.Daviset al.,“Restoringmotorcontrolandsensory feedbackinpeople
+This work has extensively examined the impacts of varying
+with upper extremity amputations using arrays of 96 microelectrodes
+the segmentation window parameters for raw 2-D sEMG signal implanted in the median and ulnar nerves,” J. Neural Eng., vol. 13, no. 3,
+construction and kernel sizes on the performance of CNNs 2016, Art. no. 036001.
+for upper limb movement classification. Moreover, we have [6] J. S. Hebert et al., “Novel targeted sensory reinnervation technique to
+restore functional hand sensation after transhumeral amputation,” IEEE
+designed a less complex, accurate, and memory-efficient CNN
+Trans. Neural Syst. Rehabil. Eng., vol. 22, no. 4, pp. 765–773, Jul. 2014.
+model whose key operations are based on dilation convolutional [7] W.Yang,D.Yang,Y.Liu,andH.Liu,“Decodingsimultaneousmulti-DOF
+layers. From the experimental results, we found that the combi- wrist movements from raw EMG signals using a convolutional neural
+nation of kernel size of 7 and overlap of 75% achieved higher network,” IEEE Trans. Human-Mach. Syst., vol. 49, no. 5, pp. 411–420,
+Oct. 2019.
+classification performance than other combinations with slightly
+[8] L. J. Hargrove, E. J. Scheme, K. B. Englehart, and B. S. Hudgins, “Mul-
+low computational time. However, a combination of kernel size
+tiple binary classifications via linear discriminant analysis for improved
+of 7 and an overlap of 50% gives acceptable computational controllabilityofapoweredprosthesis,”IEEETrans.NeuralSyst.Rehabil.
+time with slightly lower classification accuracy. Therefore, when Eng., vol. 18, no. 1, pp. 49–57, Feb. 2010.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 12 =====
+
+142 IEEE TRANSACTIONS ON HUMAN-MACHINE SYSTEMS, VOL. 54, NO. 1, FEBRUARY 2024
+[9] U. Côté-Allard, E. Campbell, A. Phinyomark, F. Laviolette, B. Gosselin, [28] S¸. Öztürk, U. Özkaya, B. Akdemir, and L. Seyfi, “Convolution kernel
+and E. Scheme, “Interpreting deep learning features for myoelectric con- size effect on convolutional neural network in histopathological image
+trol: A comparison with handcrafted features,” Front. Bioeng. Biotechnol., processing applications,” in Proc. Int. Symp. Fundamentals Elect. Eng.,
+vol. 8, 2020, Art. no. 158. 2018, pp. 1–5.
+[10] H. Zhou et al., “Toward hand pattern recognition in assistive and rehabil- [29] W. Geng, Y. Du, W. Jin, W. Wei, Y. Hu, and J. Li, “Gesture recognition by
+itation robotics using EMG and kinematics,” Front. Neurorobot., vol. 15, instantaneoussurfaceEMGimages,”Sci.Rep.,vol.6,no.1,2016,pp. 1–8.
+2021, Art. no. 659876. [30] M. Atzori et al., “Electromyography data for non-invasive naturally-
+[11] X. Li et al., “A new approach to mitigate the effect of force variation on controlled robotic hand prostheses,” Sci. Data, vol. 1, no. 1, pp. 1–13,
+pattern recognition for myoelectric control,” in Proc. 38th Annu. Int. Conf. 2014.
+IEEE Eng. Med. Biol. Soc., 2016, pp. 1684–1687. [31] J. Chang, A. Phinyomark, and E. Scheme, “Assessment of EMG bench-
+[12] O.W.Samueletal.,“Spatio-temporalbaseddescriptorforlimbmovement- mark data for gesture recognition using the ninapro database,” in Proc.
+intentcharacterizationinEMG-patternrecognitionsystem,”inProc.IEEE IEEE 42nd Annu. Int. Conf. Eng. Med. Biol. Soc., 2020, pp. 3339–3342.
+41st Annu. Int. Conf. Eng. Med. Biol. Soc., 2019, pp. 2637–2640. [32] S. Shin, Y. Baek, J. Lee, Y. Eun, and S. H. Son, “Korean sign language
+[13] R. N. Khushaba and K. Nazarpour, “Decoding HD-EMG signals recognition using EMG and IMU sensors based on group-dependent NN
+for myoelectric control-how small can the analysis window size models,” in Proc. IEEE Symp. Ser. Comput. Intell., 2017, pp. 1–7.
+be?,” IEEE Robot. Automat. Lett., vol. 6, no. 4, pp. 8569–8574, [33] A. Shalabi and Z. Shaaban, “Normalization as a preprocessing engine for
+Oct. 2021. data mining and the approach of preference matrix,” in Proc. Int. Conf.
+[14] X. Zhai, B. Jelfs, R. H. Chan, and C. Tin, “Self-recalibrating surface EMG Dependability Comput. Syst., 2006, pp. 207–214.
+pattern recognition for neuroprosthesis control based on convolutional [34] F.Kulwa,O.W.Samuel,M.G.Asogbon,O.O.Obe,andG.Li,“Analyzing
+neural network,” Front. Neurosci., vol. 11, 2017, Art. no. 379. the impact of varied window hyper-parameters on deep CNN for sEMG
+[15] D. C. Oh and Y. U. Jo, “Classification of hand gestures based on multi- based motion intent classification,” in Proc. IEEE Int. Workshop Metrol.
+channelEMGbyscaleaveragewavelettransformandconvolutionalneural Ind. 4.0 IoT, 2022, pp. 81–86.
+network,” Int. J. Control, Automat. Syst., vol. 19, no. 3, pp. 1443–1450, [35] W. Jia et al., “Adjacent age classification algorithm of yellow-feathered
+2021. chickens based on multi-scale feature fusion,” Comput. Electron. Agricul-
+[16] K. Bakirciog˘lu and N. Özkurt, “Classification of EMG signals using ture, vol. 200, 2022, Art. no. 107264.
+convolution neural network,” Int. J. Appl. Math. Electron. Comput., vol. 8, [36] C. Maufroy and D. Bargmann, “CNN-Based detection and classification
+no. 4, pp. 115–119, 2020. of grasps relevant for worker support scenarios using sEMG signals of
+[17] M. Zanghieri, S. Benatti, A. Burrello, V. Kartsch, F. Conti, and L. Benini, forearm muscles,” in Proc. IEEE Int. Conf. Syst., Man, Cybern., 2018,
+“Robust real-time embedded EMG recognition framework using tempo- pp. 141–146.
+ral convolutional networks on a multicore IoT processor,” IEEE Trans. [37] M. V. Narkhede, P. P. Bartakke, and M. S. Sutaone, “A review on weight
+Biomed. Circuits Syst., vol. 14, no. 2, pp. 244–256, Apr. 2020. initialization strategies for neural networks,” Artif. Intell. Rev., vol. 55,
+[18] P. Tsinganos, B. Cornelis, J. Cornelis, B. Jansen, and A. Skodras, “Deep no. 1, pp. 291–322, 2022.
+learning in EMG-based gesture recognition,” in Proc. PhyCS, 2018, [38] N. Bai, Z. Wang, and F. Meng, “A stochastic attention CNN model for
+pp. 107–114. rumor stance classification,” IEEE Access, vol. 8, pp. 80771–80778, 2020.
+[19] A. Olsson, N. Maleševic´, A. Björkman, and C. Antfolk, “Exploiting the [39] F. Yu and V. Koltun, “Multi-scale context aggregation by dilated convolu-
+intertemporal structure of the upper-limb sEMG: Comparisons between tions,” 2015, arXiv:1511.07122.
+an LSTM network and cross-sectional myoelectric pattern recognition [40] S. Bai, J. Z. Kolter, and V. Koltun, “An empirical evaluation of generic
+methods,” in Proc. IEEE 41st Annu. Int. Conf. Eng. Med. Biol. Soc., 2019, convolutional and recurrent networks for sequence modeling,” 2018,
+pp. 6611–6615. arXiv:1803.01271.
+[20] E. Rahimian, S. Zabihi, A. Asif, D. Farina, S. F. Atashzar, and [41] P. H. Chen and C. Y. Lee, “UAVNet: An efficient obstacel detection model
+A. Mohammadi, “FS-HGR: Few-shot learning for hand gesture recog- for UAV with autonomous flight,” in Proc. Int. Conf. Intell. Auton. Syst.,
+nition via electromyography,” IEEE Trans. Neural Syst. Rehabil. Eng., 2018, pp. 217–220.
+vol. 29, pp. 1004–1015, 2021. [42] X. Zhang, Y. Zou, and W. Shi, “Dilated convolution neural network with
+[21] M. Atzori, M. Cognolato, and H. Müller, “Deep learning with convolu- LeakyReLU for environmental sound classification,” in Proc. 22nd Int.
+tional neural networks applied to electromyography data: A resource for Conf. Digit. Signal Process., 2017, pp. 1–5.
+the classification of movements for prosthetic hands,” Front. Neurorobot., [43] M. J. Hasan, D. Shon, K. Im, H. K. Choi, D. S. Yoo, and J. M. Kim,
+vol. 10, 2016, Art. no. 9. “Sleep state classification using power spectral density and residual neural
+[22] E. Rahimian, S. Zabihi, S. F. Atashzar, A. Asif, and A. Mohammadi, network with multichannel EEG signals,” Appl. Sci., vol. 10, no. 21, 2020,
+“Semg-based hand gesture recognition via dilated convolutional neu- Art. no. 7639.
+ral networks,” in Proc. IEEE Glob. Conf. Signal Inf. Process., 2019, [44] H. Ide and T. Kurita, “Improvement of learning for CNN with ReLU
+pp. 1–5. activation by sparse regularization,” in Proc. Int. Joint Conf. Neural Netw.,
+[23] P. Gulati, Q. Hu, and S. F. Atashzar, “Toward deep generalization of 2017, pp. 2684–2691.
+peripheral EMG-Based Human-Robot interfacing: A hybrid explainable [45] D. P. Kingma and J. L. Ba, “Adam: A method for stochastic optimization,”
+solution for NeuroRobotic systems,” IEEE Robot. Automat. Lett., vol. 6, in Proc. Int. Conf. Learn. Representations, 2015, pp. 1–13.
+no. 2, pp. 2650–2657, Apr. 2021. [46] S. Ruder, “An overview of gradient descent optimization algorithms,”
+[24] M. G. Asogbon et al., “Appropriate feature set and window parameters 2016, arXiv:1609.04747.
+selection for efficient motion intent characterization towards intelligently [47] Z. Zhang and M. Sabuncu, “Generalized cross entropy loss for training
+smart EMG-PR system,” Symmetry, vol. 12, no. 10, 2020, Art. no. 1710. deep neural networks with noisy labels,” in Proc. Adv. Neural Inf. Process.
+[25] T. Farrell and R. F. Weir, “Analysis window induced controller de- Syst., 2018, Art. no. 31.
+lay for multifunctional prostheses,” in Proc. Myoelectric Symp., 2008, [48] U. Côté-Allard et al., “Deep learning for electromyographic hand gesture
+Art. no. 20125. signal classification using transfer learning,” IEEE Trans. Neural Syst.
+[26] L.H.Smith,L.J.Hargrove,B.A.Lock,andT.A.Kuiken,“Determiningthe Rehabil. Eng., vol. 27, no. 4, pp. 760–771, Apr. 2019.
+optimal window length for pattern recognition-based myoelectric control: [49] A. Stango, F. Negro, and D. Farina, “Spatial correlation of high-density
+Balancing the competing effects of classification error and controller EMG signals provides features robust to electrode number and shift in
+delay,”IEEETrans.NeuralSyst.Rehabil.Eng.,vol.19,no.2,pp. 186–192, pattern recognition for myocontrol,” IEEE Trans. Neural Syst. Rehabil.
+Apr. 2011. Eng., vol. 23, no. 2, pp. 189–198, Mar. 2015.
+[27] E. N. Kamavuako, E. J. Scheme, and K. B. Englehart, “Determination of [50] O. W. Samuel et al., “Intelligent EMG pattern recognition control method
+optimum threshold values for EMG time domain features; a multi-dataset for upper-limb multifunctional prostheses: Advances, current challenges,
+investigation,” J. Neural Eng., vol. 13, no. 4, 2016, Art. no. 0460. and future prospects,” IEEE Access, vol. 7, pp. 10150–10165, 2019.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 09:59:05 UTC from IEEE Xplore. Restrictions apply.

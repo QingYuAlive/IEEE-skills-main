@@ -1,0 +1,695 @@
+
+
+===== PAGE 1 =====
+
+IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023 7723
+A Multimodal Multilevel Converged Attention
+Network for Hand Gesture Recognition With
+Hybrid sEMG and A-Mode Ultrasound Sensing
+Sheng Wei , Yue Zhang, and Honghai Liu , Fellow, IEEE
+Abstract—Gesture recognition based on surface electromyogra- I. INTRODUCTION
+phy (sEMG) has been widely used in the field of human–machine THE HAND is the most flexible limb in the human body. It
+interaction (HMI). However, sEMG has limitations, such as low
+can assist humans in most life behaviors. Hand gestures,
+signal-to-noise ratio and insensitivity to fine finger movements,
+so we consider adding A-mode ultrasound (AUS) to enhance as an intuitive and convenient human expression, can express a
+the recognition impact. To explore the influence of multisource variety of meanings. With the development of human–machine
+sensing data on gesture recognition and better integrate the fea- interaction (HMI), HMI methods based on gesture recogni-
+tures of different modules. We proposed a multimodal multilevel
+tion have gained widespread attention. However, the result of
+converged attention network (MMCANet) model for multisource
+gesture recognition is strongly affected by the original sig-
+signals composed of sEMG and AUS. The proposed model
+extracts the hidden features of the AUS signal with a con- nal, so it is especially critical to choose a suitable signal.
+volutional neural network (CNN). Meanwhile, a CNN-LSTM The human body carries a large amount of information, and
+(long-short memory network) hybrid structure extracts some bio-signals are a great treasure for obtaining the state of the
+spatial-temporal features from the sEMG signal. Then, two
+human body. With the continuous development of the bio-
+types of CNN features from AUS and sEMG are spliced and
+signal decoding technology, researchers are extracting and
+transmitted to a transformer encoder to fuse the information
+and interact with sEMG features to produce hybrid features. analyzing human bio-signals to characterize them as con-
+Finally, the classification results are output employing fully con- trol signals to accomplish gesture interaction. The bio-electric
+nected layers. Attention mechanisms are used to adjust the signals have received a lot of attention include electromyog-
+weights of feature channels. We compared MMCANet’s feature
+raphy (EMG) [1], [2], [3], electroencephalography (EEG) [4],
+extraction and classification performance with that of manually
+electrooculography (EOG) [5], etc. In addition, near-infrared
+extracted sEMG-AUS features using four traditional machine-
+spectroscopy (NIRS) [6], force myography (FMG) [7], inertial
+learning (ML) algorithms. The recognition accuracy increased by
+at least 5.15%. In addition, we tried deep learning (DL) methods measurement unit (IMU) [8], and ultrasound (US) sensing [9],
+with CNN on single modals. The experimental results showed that etc. They have been used in wearable sensing solutions.
+the proposed model improved 14.31% and 3.80% over the CNN The surface EMG (sEMG) signal is the most accessible and
+method with single sEMG and AUS, respectively. Compared with
+simplest physiological signal, and it is the principal noninva-
+some state-of-the-art fusion techniques, our method also achieved
+sive method to determine the upper limb bio-electric signals.
+better results.
+When transmitting the nerve excitation impulse to the mus-
+Index Terms—A-mode ultrasound (AUS), attention mecha-
+cle, we can obtain the sEMG signals through the surface
+nism, gesture recognition, hybrid features, multimodal, surface
+electrode guidance and operation of amplification, and it can
+electromyography (sEMG), transformer.
+reflect the functional change of the neuromuscular system.
+Pattern recognition based on sEMG has been widely used in
+Manuscript received 2 May 2022; revised 30 June 2022; accepted 29
+August 2022. Date of publication 23 September 2022; date of current version HMI [10], [11]. As for the sEMG-based gesture recognition,
+22 November 2023. This work was supported in part by the Guangdong Basic the feature extraction of sEMG is essential for the later decod-
+and Applied Basic Research Foundation under Grant 2020B1515120064;
+ing, and the commonly used features can divide into three
+in part by the Shenzhen Science and Technology Program under Grant
+JCYJ20210324120214040; and in part by the National Natural Science categories: 1) time-domain features; 2) frequency-domain fea-
+Foundation of China under Grant 61733011 and Grant 62003222. This arti- tures; and 3) time-frequency features [12], and the different
+cle was recommended by Associate Editor H. Liu. (Corresponding author:
+feature combinations have huge impacts on the results. In [13],
+Honghai Liu.)
+This work involved human subjects or animals in its research. Approval of the scholars used fused wavelet packets to gain the sEMG
+all ethical and experimental procedures and protocols was granted by Ethic characteristics and performed better than the conventional
+Committee of Zhejiang University of Technology.
+counterpart techniques. In [14], researchers used a convolu-
+Sheng Wei and Yue Zhang are with the Department of Computer
+Science, Zhejiang University of Technology, Hangzhou 310013, China tion neural network to extract sEMG features, called CNNFeat,
+(e-mail: 2112012098@zjut.edu.cn; 1111712013@zjut.edu.cn). and the results showed that the combination of CNNFeats and
+Honghai Liu is with the State Key Laboratory of Robotics and Systems,
+manual features can further improve the accuracy of traditional
+Harbin Institute of Technology Shenzhen, Shenzhen 518055, China, and
+also with the School of Computing, University of Portsmouth, PO1 3HE classifiers.
+Portsmouth, U.K. (e-mail: honghai.liu@icloud.com). So far, scholars have achieved significant progress in
+Color versions of one or more figures in this article are available at
+processing sEMG with advanced methods. However, the
+https://doi.org/10.1109/TCYB.2022.3204343.
+Digital Object Identifier 10.1109/TCYB.2022.3204343 signal characteristics of sEMG determine that it is weak
+2168-2267 (cid:2)c 2022 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 2 =====
+
+7724 IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023
+and susceptible to interference from noise. To overcome this CNN can extract the characteristics of hierarchy and space
+shortcoming, A-mode US (AUS) is introduced as the pio- well [25]. LSTM can make good use of the temporal features
+neering study to resolve the decoding effect in [15]. AUS of sequences [26].
+is a high-frequency US. It can detect muscle morphology by Therefore, we designed the multimodal multilevel con-
+receiving echo signals. It is based on the relationship between verged attention network (MMCANet) to perform feature
+time and amplitude of sound waves to detect the echo of extraction and fusion using a deep-learning-based approach to
+sound waves, with high axial resolution and positioning accu- enhance feature extraction and exploit the relationship between
+racy [16]. AUS can obtain the subtle changes of deep muscles features. In this article, we adopted CNN with LSTM networks
+and has enormous advantages over sEMG in recognizing sub- to extract deeper traits and intrinsic connections to multimodal
+tle gestures. It is also less likely to be affected by muscle data and find effective ways of multimodal feature fusion.
+fatigue and has a better stability. Compared with the B-mode Also, since both AUS and sEMG are multichannel signals,
+US, the AUS device is smaller, cheaper, and wearable for stud- we added a channel attention mechanism to adjust channels’
+ies on gesture recognition. In [17], a method was proposed to weights. It can better explore the relationship between chan-
+obtain forearm muscle information by multiple single-element nels. At the same time, to better integrate the information
+AUS sensors, and average recognition accuracy can achieve of different modalities, we chose the more advanced trans-
+96% for six movements, including five finger flexion motions former encoder module to extract the fusion traits. We also
+and a resting state. Yang et al. [18] implemented the decoding compared our method with concatenating features and two
+of synchronized and proportional wrist/hand kinematics using state-of-the-art fusion methods and obtained a higher decoding
+AUS and achieved better performance than sEMG. rate.
+AUS provides spatial information on muscle morphologies, The remainder of this article is organized as follows.
+but lacks temporal information, while sEMG is a time series Section II introduces the methods and basic experimental set-
+of electrophysiological signals, which can supplement the tings. Section III describes the results and analysis of different
+temporal details for AUS. The sEMG signal acquires the char- groups. The last section gives a conclusion of this study.
+acteristics of the human surface only, while AUS can obtain
+the distinctions of deep muscles [19]. Therefore, the features II. METHOD AND EXPERIMENT
+obtained by fusing AUS and sEMG, which can obtain spatial-
+In this article, for single AUS, sEMG, and combined sEMG-
+temporal information and traits of superficial and deep muscle
+AUS acquisition signals, we use traditional ML methods and
+compared with a single modality, can bring better recogni-
+DL for feature extraction and classification, respectively. The
+tion performance. Yang et al. [20] exploited the advantages
+specific experiment setup will show in later sections.
+of AUS in gesture recognition and discrete force estima-
+tions and then combined them with the strength of sEMG
+A. Networks
+in continuous force estimation to achieve multilevel scaled
+gesture control. Boyd and Liu [21] used AUS signals as a 1) CNN: CNN is a feed-forward neural network, usually
+complement to sEMG signals, and it could provide power- consisting of one or more convolution and fully connected
+ful improvements in the decoding of fine finger movements layers. The receptive field was introduced into CNN to mimic
+and large arm movements. Xia et al. [15] used feature extrac- the pattern the human brain processes information [27]. So,
+tion and traditional machine-learning (ML) algorithms for compared to traditional ML methods, CNN can learn and gen-
+classification. The data collected by sEMG and AUS syn- erate more hidden features, which is superior to manual feature
+chronously showed a significant improvement over a single extraction methods [14].
+modality. Zeng et al. [22] proposed a convolutional neu- 2) LSTM: LSTM is a variant of recurrent neural network
+ral network (CNN)-based sEMG and AUS feature fusion (RNN), mainly to figure out the gradient disappearance and
+architecture (EU-Net), which surpassed the method of the gradient explosion problems during the long sequences train-
+ML algorithm with the manual designed features. In [23], ing. It is a kind of neural network containing LSTM blocks,
+researchers proposed a regularized deep fusion of kernel and the LSTM block includes forget gate, input gate, and
+machine (RDFKM) approach to merge multimodal physiolog- output gate. The forget gate, which is the key to achieving
+ical signals. The above study shows that multimodal gesture the long-term memory task, is the most critical part of each
+recognition can complement the strength of different modali- LSTM block [28]. The LSTM network can capture the tem-
+ties to improve performance [24], and indicates the possibility poral dependence of time series and has achieved a series of
+of combining sEMG and AUS. results in time-series prediction [29], [30].
+In the previous studies, methods based on traditional man- 3) AlexNet: AlexNet was designed by Hinton. He is the
+ual feature extraction and ML have received much attention winner of the 2012 ImageNet competition and his student
+and development. Yet, the classic feature extraction and classi- Alex Krizhevsky. Tricks, such as ReLU, Dropout, and Local
+fication algorithms are limited in their ability to extract traits Response Normalization were applied in CNN successfully
+from the signal, especially in the correlation of multimodal the first time. It has 6000w parameters and 65w neurons and
+data is not well exploited. Deep learning (DL) is an algorithm is composed of five convolution pooling layers, followed by
+for learning the representation of data, with the advantages three fully connected layers [31].
+of learning ability and good adaptability, which can fully 4) DenseNet: DenseNet is the best paper of CVPR2017,
+extract the features of the signal. The most widely used which can be regarded as a network of ResNet and
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 3 =====
+
+WEI et al.: MMCANet FOR HAND GESTURE RECOGNITION 7725
+Fig. 1. Structure of transformer encoder.
+Fig. 2. Twenty gestures in the dataset [15].
+HighwayNet. They introduced shortcuts to reduce gradient
+(mRMR) algorithm [38]. Intermediate fusion is converting
+disappearance and enhanced information fusion between
+different modal data into high-dimensional feature represen-
+different layers. It is composed of multiple Dense Blocks in
+tations first and then fusing them in the middle layer of the
+series [32].
+model. Take a neural network as an example. The intermediate
+5) SENet: Squeeze-and-excitation networks (SENet) is an
+fusion first uses a neural network to transform the origi-
+auxiliary network, including two critical operations: 1) squeeze
+nal data into a high-dimensional feature representation, then
+and 2) excitation. The structure is simple and can insert into
+obtains and fuses the traits of different modalities in the high-
+other network structures without introducing additional layers
+dimensional space. Back-end fusion refers to training and
+or functions [33]. The squeeze operation represents the global
+classifying individual modal data separately by converging
+characteristics of each 2-D feature channel by compressing the
+the output scoring of the trained classifiers for each modality.
+features along the spatial dimension and characterizing each
+The classical methods of back-end fusion include max-fusion,
+channel as a number. The excitation procedure is similar to the
+averaged-fusion, etc.
+gate mechanism in RNNs, generating corresponding weights
+for each feature channel, and representing the correlation
+between channels. Finally, the significance of each channel B. Dataset
+is adjusted by multiplication operation, and the channel focus In this article, the dataset for the experiment contains a syn-
+module is implemented to improve the focus on critical fea- chronized sEMG signal and AUS signal, where the sEMG and
+ture channels, thereby enhancing the beneficial information AUS data are stored separately and can therefore use inde-
+and weakening the invalid information [34]. pendently. In subsequent experiments, the single modal data
+6) Transformer Encoder: The transformer structure is com- are from the multimodal signal. The selection of motions in
+posed of encoders and decoders. The encoder is divided into this experiment is based on the NinaPro database [39]. The
+two modules, the multihead attention layer and the feed- 20 gestures in this dataset were shown in Fig. 2. It includes
+forward neural-network layer, as shown in Fig. 1. Further split, six wrist movements: 1) wrist flexion (WF); 2) wrist exten-
+the multihead attention layer can be divided into the atten- sion (WE); 3) wrist radial deviation (WRD); 4) wrist ulnar
+tion layer and Add & Norm layer. The feed-forward neural deviation (WUD); 5) wrist supination (WS); and 6) wrist
+network can be divided into the Linear layer and Add & pronation (WP); 13 finger fine movements: 1) fist (FS);
+Norm layer. In the multihead attention layer, the core lies in 2) index point (IP); 3) index and middle finger point (IMP);
+three Query (Q)/Key (K)/Value (V) matrices, in which the 4) thumb and index finger flexion (TIF); 5) thumb flex-
+Q/K matrix generates a weight matrix (via softmax), then the ion (TF); 6) fingers abduction (FA); 7) thumb up (TU);
+sum of the weight matrix and the V matrix is weighted, and 8) index flexion (IF); 9) middle finger flexion (MF); 10) index
+achieve the effect of self-attention [35]. Because of its self- and MF (IMF); 11) middle and ring finger flexion (MRF);
+attention mechanism and powerful coding ability, it can fuse 12) ring and little finger flexion (RLF); and 13) pinch (PH)
+information from different modules [36]. and a rest state (RS).
+7) Multimodal Fusion: In multimodal tasks, how effi- The experimental data are acquired by a four-channel sEMG
+ciently fusing multiple features from various modalities is the and AUS fusion device (Elonxi Ltd, www.elonxi.cn), as shown
+key to improving model performance. Generally, the fusion in Fig. 3. The device consists of four-unit modules with one
+methods of multimodal features are categorized into three AUS probe and two sEMG electrodes fixed on each module,
+types: 1) front-end fusion; 2) intermediate fusion; and 3) back- and it can obtain both sEMG and AUS signals from the same
+end fusion [37]. Front-end fusion is the fusion of data from area. The sampling frequency of the sEMG signal is 1000 Hz,
+multiple modalities into a single feature vector before sub- the AUS sampling frequency is 10 Hz, and each frame of the
+sequent operations. Multimodal front-end fusion methods are AUS signal has 1000 sampling points.
+often combined with feature extraction methods to eliminate Eight subjects (age: 22 ± 3, height: 175 ± 10 cm, weight:
+redundant information, such as principal component analy- 65 ± 10 kg) volunteered in the experiment. They are right-
+sis (PCA) and the maximum relevance minimum redundancy handed and free of neuropathies or traumas to the upper limbs.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 4 =====
+
+7726 IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023
+Fig. 5. Structure of AUS CNN network.
+TABLE I
+AUS-CNN ARCHITECTURES
+Fig. 3. Picture of the sEMG and AUS fusion device.
+a band-pass filter for noise reduction for the sEMG signal. To
+ensure the synchronization with the AUS signal, the window
+size of the data is 300 ms for the noise reduction signal, and
+the step size is 100 ms so that the sampling frequency of the
+sEMG signal is consistent with the AUS signal at 10 Hz, and
+Fig. 4. Position of the probes. the normalization operation is employed.
+D. Experiment Setup
+The AUS/sEMG probes were worn on the dominant hand
+To test and verify the proposed network structure with
+(an appropriate amount of coupling agent should apply to the
+sEMG, AUS, and fusion signals. We designed different
+AUS probe in advance). We placed the armband on the fore-
+network models for the three datasets in this article. For all the
+arm of the subject. Before that, we should clean the subjects’
+networks, the batch size was 50. The early stopping method
+skin with alcohol pads where the probes will place. Two of
+would stop training when the training loss no longer decreases.
+the probes were attached to the ulnar carpal flexor and ulnar
+The specific setup of the experiments will show in later sec-
+carpal extensor muscles. While the other two were attached
+tions. For the datasets, the first four out of eight trials for
+to the radial carpal flexor and radial carpal flexor muscles, as
+each subject were the training set, and the data from the last
+shown in Fig. 4. The experiment was carried out following
+four trials were the test set. The network weight initialization
+the Declaration of Helsinki. In the experiment, the duration
+method was random initialization. The experiments were per-
+of each motion is 5 s, with no rest interval between changes.
+formed on i5-11400F CPU, 2.60 GHz, 32-GB RAM, and an
+Subjects were free to rest for 25-s after the completion of all
+NVIDIA Geforce GTX 3060 GPU-supported PC.
+20 types of actions. The above process was completed once
+In all figures of the network structure, the first number
+and called one action group. The experiment was repeated
+before @ means the channel number of this layer, and a × b
+for eight groups. For each gesture action, the middle 3 s of
+means the width and height in the layer. The ConvX in the
+the steady-state were picked as the experimental data, and the
+figure stands for the ConvBlock, the structure of a ConvBlock
+number of 20 types of gestures in the database was balanced.
+was shown in Fig. 5. In this table, in and out are in_channel
+and out_channel, k, s, and p means kernel_size, padding, and
+C. Data Preprocessing
+stride. In all the tables of network parameters, the activation
+The preprocessing process for AUS signals includes time function of the convolutional layer is ReLU.
+gain compensation (TGC), Gaussian filtering, envelope extrac- 1) AUS CNN Network: For individual AUS signals, we
+tion, and log compression [40]. The TGC was utilized to used one frame of data from four channels as a sample, then
+compensate for the energy attenuation caused by dispersion transformed each frame into a shape of 100 × 10 to obtain a
+and damping during the propagation of AUS. In band-pass data size of 4 × 100 × 10 for each sample to feed into the
+filtering, we used a Gaussian filter with the center frequency network for training. The network structure consists of five
+positioned at the center of the passband, and it can filter out the layers, as shown in Fig. 5. The AUS-CNN architectures are in
+nonlinear propagation and the noise in the circuit. The Hilbert Table I. Adam was the optimizer, and the initial learning rate
+transform was used to perform envelope extraction. The log was 0.001.
+compression compressed the large dynamic range caused by 2) sEMG CNN-LSTM Network: For the sEMG signal,
+TGC into a smaller space for subsequent processing. We use since the data quantity for each sample was much smaller than
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 5 =====
+
+WEI et al.: MMCANet FOR HAND GESTURE RECOGNITION 7727
+TABLE II
+SEMG-CNN-LSTM ARCHITECTURES
+Fig. 6. Structure of sEMG CNN-LSTM network.
+TABLE III
+ALEXNET ARCHITECTURES
+(a) (b)
+TABLE IV
+DENSENET ARCHITECTURES
+Fig. 7. Time-frequency diagrams of two adjacent. (a) sEMG and (b) AUS
+signal samples.
+Fig. 8. Multimodal fusion structure of RDFKM.
+that of AUS, we stitched the data of four channels together
+and converted it into a shape of 300 × 4. Then the data was
+sent to the network for training. The entire network consisted
+of seven layers, as shown in Fig. 6, and the parameters of signal samples are shown in Fig. 7. The network structure
+the sEMG CNN-LSTM Network are shown in Table II. The parameters are shown in Tables III and IV.
+optimizer was Adam, and the initial learning rate was 0.01. 4) Some State-of-the-Art Fusion Methods: To prove the
+3) Other Famous Backbones (AlexNet and DenseNet): We superiority and effectiveness of our method, we compared it
+chose the well-known AlexNet and DenseNet as a comparison. with the state-of-the-art method EU-Net based on sEMG and
+Since these two networks were for image classification and AUS fusion [22], whose network parameters were shown in
+sEMG and AUS data are multichannel signal data. We tried Table V. Also, we compared it with an advanced multimodal
+two input methods: one is to use the signal data as input and fusion method RDFKM [23]. Since the input signals are dif-
+the other is to transform the signal data into a time-frequency ferent, the structure of the multimodal fusion in RDFKM
+map of size 227 × 227 by continue wavelet transform (CWT). was reconstructed for comparison, as illustrated in Fig. 8. The
+The time-frequency diagrams of two adjacent sEMG and AUS feature dimension was 64, the same as the original paper.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 6 =====
+
+7728 IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023
+Fig. 9. Structure of MMCANet. Every ConvBlocks’ configurations are in Table VI.
+TABLE V TABLE VII
+EU-NET ARCHITECTURES AVERAGE RECOGNITION RATE OF DIFFERENT FUSION TYPES
+CNN features of sEMG and AUS signals and reshaped this
+fusion data to (batch size, 32, 2200), then sent it into a three-
+layer four-head transformer encoder module. These features
+were reweighted with a transformer encoder at an appropri-
+ate ratio. In this way, more detailed and hidden features can
+be extracted. The next step was to obtain the multimodal and
+TABLE VI multilevel spatial-temporal fusion feature of sEMG and AUS
+DETAILS OF PROPOSED MMCANET signals by splicing the hybrid transformer encoder feature with
+the LSTM time features of the sEMG signals. Finally, the
+hybrid features were flattened, then sent to the fully connected
+layer for classification training, and the classification activa-
+tion function was softmax. The specific network structure is
+shown in Fig. 9 and Table VI. The optimizer was SGD, and
+the learning rate was 0.001.
+E. Details of Traditional Methods
+Mean absolute deviation (MAV), waveform length (WL),
+zero crossing number (ZC), slop sign changes (SSC), and
+5) AUS-sEMG MMCANet: To improve the feature extrac- TD-AR6 were chosen as the sEMG feature. We used
+tion capability and classification performance of multisource coefficients of piece-wise linear fitting to characterize the AUS
+signals. We need to fuse the sEMG and AUS signals. After feature and applied appropriate PCA on the splicing traits
+conducting experimental comparisons of the three fusion of sEMG and AUS normalized features to obtain the hybrid
+methods (Table VII), this article adopts the intermediate fusion features. For the selection of classifiers, we used the four
+for the feature fusion of sEMG-AUS multimodal fusion oper- most common methods: 1) linear discriminant analysis (LDA);
+ation. We proposed an MMCANet structure and sent the 2) k-nearest neighbor algorithm (KNN); 3) support vector
+sEMG and AUS signals to their respective networks for feature machine (SVM); and 4) artificial neural network (ANN). The
+extraction. For AUS signals, one-layer CNN was performed to n_neighbors in KNN was 10, the standard value in the SVM
+extract abstract spatial features, and an SENet module was fol- classifier was the RBF kernel, and hidden_layer_sizes was 128.
+lowed to adjust the weight of different channels. For sEMG
+signals, CNN, and LSTM networks were employed to extract
+III. RESULT AND DISCUSSION
+spatial and temporal features successively, and the SENet
+A. Experiment 1: Different Fusion Methods
+module is embedded between CNN and LSTM.
+Further fusion operations were considered to avoid the loss Experimental results comparing different fusion methods
+of the sEMG signal’s spatial information. We first joined the showed that, for the multimodal fusion of AUS and sEMG,
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 7 =====
+
+WEI et al.: MMCANet FOR HAND GESTURE RECOGNITION 7729
+TABLE VIII
+AVERAGE RECOGNITION RATE BASED ON DIFFERENT FEATURES AND CLASSIFIERS
+the intermediate fusion method was better than the front- All of them were higher than the conventional ML
+end fusion and back-end fusion, as listed in Table VII. The algorithms.
+accuracy of intermediate fusion is 94.14% ± 0.23%, while The comparison of the accuracy of different signals using
+the accuracy of front-end fusion and back-end fusion is SVM and DL methods is shown in Fig. 10. We can see that,
+90.34% ± 0.28% and 89.82% ± 0.77%, respectively. The whether using the traditional ML algorithm or the MMCANet
+intermediate fusion approach improved the accuracy by about in this article, AUS outperforms sEMG in the classification
+4% compared to the other two approaches. Since the AUS performance of gesture recognition, which shows that the
+signal is a nontime-series signal and the sEMG signal is a AUS signal excels the sEMG signal in terms of classifica-
+time-series signal, it is not suitable for front-end fusion. The tion performance of gesture recognition. Multimodal fusion
+recognition accuracy of AUS is much higher than that of the features precede single-modal features. The improvement of
+sEMG signal [15], which will reduce the recognition accuracy hybrid feature accuracy proves that there are certain comple-
+if the back-end fusion is selected, so this article adopts the mentarities between AUS and sEMG in gesture recognition.
+intermediate fusion for the feature fusion of sEMG-AUS Meanwhile, for most of the subjects, the accuracy of the DL
+multimodal fusion operation. method was higher than that of the traditional ML algorithm.
+On average, for the sEMG signal, the CNN-LSTM network
+B. Experiment 2: Comparison With Traditional improved 7.83%, 22.98%, 13.53%, and 4.48% compared to
+Machine-Learning Methods LDA, KNN, SVM, and ANN, respectively, the CNN method
+of AUS improved 7.14%, 7.89%, 5.85%, and 8.11%, and
+To indicate the superiority of DL methods in feature extrac-
+MMCANet improved 5.15%, 7.73%, 6.40%, and 5.75% sep-
+tion and classification, we compare them with manual feature
+arately, which improved the performance, especially in the
+extraction with four traditional ML patterns: 1) LDA; 2) KNN;
+classification accuracy of sEMG signal. The accuracy improve-
+3) SVM; and 4) ANN. As shown in Table VIII, in the
+ment of the AUS signal showed that the abstract features
+case of using traditional ML methods, for sEMG, the high-
+extracted by CNN for the AUS signal better represent the
+est algorithm of gesture recognition accuracy is ANN of
+waveform features of the AUS signal than the manual fea-
+75.35%, the lowest is KNN of 53.41%, and the accuracy of
+tures. The accuracy improvement of the fused features proved
+SVM is 66.30%. For AUS, the recognition accuracy from
+the effectiveness of the multimodal multilevel feature fusion
+high to low is 84.49%, 83.20%, 82.45%, and 82.23% for
+proposed in this article over the conventional methods.
+SVM, LDA, KNN, and ANN, respectively. For the fused sig-
+nals, the decoding rates of LDA, KNN, SVM, and ANN are
+C. Experiment 3: Impact of Different Input Methods
+88.99%, 86.41%, 87.74%, and 88.39%, respectively. The aver-
+age recognition rates of sEMG, AUS, and fused features using We compared with some famous DL backbones, such as
+DL methods were 79.83%, 90.34%, and 94.14%, respectively. AlexNet and DenseNet. The CWT was adopted to convert the
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 8 =====
+
+7730 IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023
+Fig. 10. Average recognition rate of SVM classifier and DL methods for sEMG, AUS, and hybrid features.
+signals into time-frequency diagrams. Two data organizations: also based on the fusion of sEMG and AUS under the DL
+1) original signals and 2) time-frequency graphs were used as framework. Compared with the 91.55% accuracy of EU-Net,
+input data. As shown in Table VIII, for sEMG, the recognition MMCANet was 2.59% higher. Since there were few stud-
+rates of original data as input with AlexNet and DenseNet ies on the related fusion gesture recognition based on sEMG
+were 63.75% and 61.93%. Meanwhile, the recognition results with AUS, we also compared it with a method for multimodal
+of the image as input were 77.39% and 77.91%, separately. In fusion of physiological signals, RDFKM. Experimental results
+the first case, AlexNet was slightly higher, and the two input show that the recognition rate based on RDFKM was 92.17%,
+modes were almost the same in the second case. For AUS, which was 1.97% lower than that of MMCANet. In summary,
+the accuracy of AlexNet with signals and images was 74.98% our proposed method can achieve better performance.
+and 77.63%. The performances of DenseNet in time series and
+spectrograms were 82.16% and 85.66%. Those showed that the
+E. Experiment 5: The Results With Deep Learning Method
+performance of the image as input was better than that of the
+on Different Gestures
+signal. DenseNet was better than AlexNet because its residual
+The recognition results of different features are illustrated
+blocks alleviate overfitting to some extent, but both of them
+in Fig. 11. We can see that AUS is better than sEMG in most
+were lower than that of single-layer CNN. The factors that
+gestures. For the six wrist actions, sEMG had a higher recog-
+may cause this result were the overfitting caused by an over-
+nition accuracy for the first four actions than the other two
+complicated network. Therefore, three-layers and five-layers
+gestures. The accuracy for the first four very different motions
+CNN structures on AUS signals were compared. In the results,
+was close to the result of AUS and fusion features. However,
+the more layers, the worse the effect. Those illustrated that
+the other two actions, WS and WP, with fewer differences. The
+the AUS signal does not need a very complicated network
+recognition accuracy was lower. Therefore, the sEMG decod-
+structure, so this study only used a single-layer CNN structure
+ing rate was lower for motions with smaller amplitude. The
+to extract the features of AUS.
+recognition rates of AUS and fusion signals were close to
+100% for these two motions because despite the amplitude
+D. Experiment 4: Comparisons With State-of-the-Arts
+being tiny between these two actions, the related muscle dif-
+Fusion Methods
+ferences were immense. It can be seen from the experimental
+The recognition rate of the sEMG signal was 79.83% with results that for most finger movements, the recognition rate of
+the CNN-LSTM structure network, and the classification accu- AUS was higher than that of sEMG. However, the rest ges-
+racy of AUS signals was 90.34% with the CNN method, ture was likely to be confused with other gestures due to the
+which achieved a higher decoding rate than other methods. muscle had a corresponding shape. While the sEMG signal
+According to the comparison experiments above, it was illus- was basically in a stable state in the resting state, which was
+trated that we had the best feature extraction capability and distinctive from other gestures, the recognition rate of sEMG
+recognition rate for the CNN-LSTM and CNN architectures was higher.
+proposed by sEMG and AUS, respectively. The average classi- In terms of gesture categories, for the hybrid features, the
+fication accuracy of MMCANet was 94.14%. To demonstrate gesture with the highest average recognition rate was RS
+the superiority of our proposed method, we have compared 100.00%, and the lowest was TIF 78.75%, half of the motions
+it with the proposed fusion methods lately. The EU-Net was recognized at 95% or more, and 30% of the gestures were
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 9 =====
+
+WEI et al.: MMCANet FOR HAND GESTURE RECOGNITION 7731
+Fig. 11. Results of 20 gestures average recognition accuracy for sEMG-CNN-LSTM, AUS-CNN, and sEMG-AUS-MMCANet.
+(a) (b) (c)
+Fig. 12. Projections of different features on 2-D space by tSNE. (a) sEMG.
+(b) AUS. (c) sEMG-AUS.
+Fig. 13. Two methods of four-fold cross-validation.
+more than 99%. For the six wrist movements, the recognition
+rate of WUD was the lowest at 94.90%, the other five
+movements were above 98%, and the highest identification TABLE IX
+AVERAGE GESTURE RECOGNITION ACCURACY OF THE FOUR-FOLD
+rate was 99.90% for WS, indicating that the method reached
+CROSS-VALIDATION RESULTS
+a very high accuracy in wrist gesture recognition. For the 13
+fine finger movements, the lowest recognition rate was TIF,
+with an accuracy rate of 78.13%, which was mainly affected
+by the poor discrimination performance of the sEMG signal
+on this movement, and most finger gesture recognition rates
+were above 90%, with the highest being PH at 97.71%.
+The hybrid feature was better than the sEMG signal in all
+20 gestures and better than the AUS feature in most ges-
+F. Experiment 6: Four-Fold Cross-Validation
+ture decoding. Even if the part of recognition rate of fusion
+data was lower than AUS, the difference was within 2%. Four-fold cross-validation was adopted to evaluate the clas-
+Because the sEMG signal was the bio-electrical signal of the sification performance of our method in this experiment. We
+arm, while the AUS signal was the feature representing the chose two methods to divide all eight trials, as shown in
+muscle morphology, the hybrid features can more compre- Fig. 13. The first method was to keep the last four trials as the
+hensively illustrate the bio-electric signal state and muscle test set, dividing the first four trials into four folds, of which
+morphology in different dimensions. Therefore, the hybrid fea- three folds were used for training and others for validation.
+tures can obtain higher accuracy in gesture recognition. As The training would stop early according to the loss of valida-
+shown in Fig. 12, the sEMG, AUS, and hybrid characteristics tion set. The second method was to divide all eight trials into
+were projected to two dimensions for the visualization. The four folds, three folds for training and one fold for testing,
+fusion features can distinguish different gestures better than and training loss was used for early stopping. The results of
+the single-modal traits. So they can attain better performances. four-fold cross-validation are shown in Table IX.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 10 =====
+
+7732 IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023
+TABLE X
+from Method 4, in contrast to using CNN for further feature
+AVERAGE GESTURE RECOGNITION ACCURACY OF THE ABLATION
+EXPERIMENT RESULTS extraction and fusion, the transformer encoder was more effec-
+tive in feature extraction and integration due to its self-attentive
+mechanism.
+The comparison between the various ablation experimen-
+tal methods can indicate the effectiveness of our proposed
+MMCANet in multimodal fusion decoding.
+H. Future Work
+The present study has potential limitations. Due to the lack
+From the outcomes of method (a), we can see that the
+of relevant public datasets, this study uses our collection of
+accuracy trend of early stop using the validation set loss was
+sEMG-AUS datasets and therefore lacks comparisons with
+almost the same as that of early stop using the training set
+other researchers. Thus, the proposed method was compared
+loss. The accuracy rate was reduced because method (a) nar-
+with four traditional ML algorithms and six DL networks.
+rows the training set under the condition that the test set was
+In the future, we will try more combinations of multimodal
+unchanged. Method (b) was equivalent to expanding the train-
+recognition to explore its potential in prosthesis control.
+ing set and shrinking the test set. Therefore, all recognition
+Meanwhile, in this experiment, there is a lack of data on dis-
+rates have increased. Compared with AUS, the accuracy of
+abled people. We will try to remedy this deficiency in our
+hybrid features decreased from 3.80% to 1.04%, which illus-
+future work. In this experiment, only gesture classification
+trates that fusion features can achieve better results with less
+was recognized but based on the characteristics of sEMG and
+training data and have advantages in long-time use.
+AUS, the sEMG-AUS fusion signal has potential in joint angle
+measure and force estimation, which we will study next.
+G. Experiment 7: Ablation Experiment
+To investigate the effect of different feature extraction and
+combination patterns on networks’ performance, and to bet-
+IV. CONCLUSION
+ter validate the effectiveness of MMCANet proposed in this In this article, we utilized multimodal sensing combined
+article. We used the method of direct combining CNN fea- with sEMG and AUS for gesture recognition and proposed
+tures of AUS with CNN-LSTM features of sEMG as the an MMCANet. The model can be employed in the physio-
+baseline model and then conducted the following ablation logical signal data jointly collected by sEMG and AUS. The
+experiments. Method 1: add CNN features of sEMG to the CNN-LSTM network was used to exact the Spatio-temporal
+baseline traits for splicing to obtain triple merged features. features of sEMG. The abstract characteristics of the AUS sig-
+Method 2: directly splice the CNN features of AUS with that of nal were extracted by using CNN, and SENets were embedded
+sEMG to obtain primary CNN features, then feed the primary at the end of the CNN networks to adjust the weight between
+CNN features into CNN with the larger convolutional kernel channels, using a channel attention mechanism to enhance
+to obtain high-dimensional CNN features. Finally, merge them the high information channels and reduce the influence of
+with the CNN-LSTM features of sEMG to obtain multilevel low informational maps. Then, the sEMG and AUS CNNfeats
+fusion features. Method 3: add SENet based on Method 2. were combined to take the fusion feature and sent it to the
+Method 4: use Transformer Encoder to fuse the information of transformer encoder module to extract the correlation between
+the AUS-sEMG CNN feature. The average gesture recognition different modal traits. Compared with the traditional feature
+accuracy of five ablation experiments is shown in Table X. stitching methods and some state-of-the-art fusion techniques,
+From the experimental results, it can be seen from the com- the recognition accuracy of the MMCANet improved by at
+parison between Baseline and Method 1, that the improvement least 5.15% and 1.97%. The improvement in accuracy over
+of the number and type of features can improve the recogni- other strategies confirms the effectiveness of our method. As
+tion accuracy because more features and dimensions can better well as the advance, compared with sEMG and AUS alone,
+represent the contents and characteristics of the data. From the recognition rate improved by over 3.80%, demonstrating
+Method 2, we know that the feature extraction ability of CNN the complementary nature of sEMG and AUS, two distinct
+is stronger than the direct feature splicing, which can better modalities of human physiological signals, which have practi-
+extract the hidden features between different attributes, and cal significance and application potential for fusion decoding
+improve the recognition performance. According to Method 3, of discrete gestures.
+we can see that adding the channel attention mechanism can The primary idea of MMCANet is to conduct feature extrac-
+generate the feature channel attention maps, carry out the tion for multimodal inputs separately and then perform feature
+modification of channel weights, strengthen the more effective fusion of different modalities. CNN has a good feature extrac-
+feature maps, and weaken the useless feature maps. Therefore, tion ability for various inputs (images, signals, etc.), and the
+it enables the model to extract the valuable features more effi- transformer encoder is general for encoding and integrating
+ciently and adequately during training, reduce the influence of high-dimensional features. Those indicate that MMCANet has
+invalid features, and thus improve the recognition rate. The more potential in multimodal fusion. In future work, use-case
+results showed that the channel attention mechanism can play and applications will be targeted to maximize the performance
+a beneficial effect on multichannel multimodal data. Finally, of the proposed network architecture.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 11 =====
+
+WEI et al.: MMCANet FOR HAND GESTURE RECOGNITION 7733
+REFERENCES [22] J. Zeng, Y. Zhou, Y. C. Yang, J. L. Wang, and H. H. Liu, “Feature fusion
+of sEMG and ultrasound signals in hand gesture recognition,” in Proc.
+[1] Y. Fang, D. Zhou, K. Li, Z. Ju, and H. Liu, “Attribute-driven granu- IEEE Int. Conf. Syst., Man, Cybern., 2020, pp. 3911–3916.
+lar model for EMG-based pinch and fingertip force grand recognition,” [23] X. W. Zhang et al., “Emotion recognition from multimodal physiological
+IEEE Trans. Cybern., vol. 51, no. 2, pp. 789–800, Feb. 2021. signals using a regularized deep fusion of kernel machine,” IEEE Trans.
+[2] Z. Yang et al., “Dynamic gesture recognition using surface EMG signals Cybern., vol. 51, no. 9, pp. 4386–4399, Sep. 2021.
+based on multi-stream residual network,” Front. Bioeng. Biotechnol., [24] Y. Fang, N. Hettiarachchi, D. Zhou, and H. Liu, “Multi-modal sensing
+vol. 9, Oct. 2021, Art. no. 779353. techniques for interfacing hand prostheses: A review,” IEEE Sensors J.,
+[3] T.-Y. Pan, W.-L. Tsai, C.-Y. Chang, C.-W. Yeh, and M.-C. Hu, “A vol. 15, no. 11, pp. 6065–6076, Nov. 2015.
+hierarchical hand gesture recognition framework for sports referee [25] G. Pomboza-Junez and J. H. Terriza, “Hand gesture recognition based
+training-based EMG and Accelerometer sensors,” IEEE Trans. Cybern., on sEMG signals using support vector machines,” in Proc. IEEE 6th
+vol. 52, no. 5, pp. 3172–3183, May 2022. Int. Conf. Consum. Electron., 2016, pp. 174–178.
+[4] Y. Tang, D. Chen, H. Liu, C. Cai, and X. Li, “Deep EEG [26] C. F. Ma, C. Lin, O. W. Samuel, L. S. Xu, and G. L. Li, “Continuous
+superresolution via correlating brain structural and functional con- estimation of upper limb joint angle from sEMG signals based on
+nectivities,” IEEE Trans. Cybern., early access, Jun. 14, 2022, SCA-LSTM deep learning approach,” Biomed. Signal Process. Control,
+doi: 10.1109/TCYB.2022.3178370. vol. 61, Aug. 2020, Art. no. 102024.
+[5] O. Faust, Y. Hagiwara, T. J. Hong, O. S. Lih, and U. R. Acharya, “Deep [27] Y. Sun, B. Xue, M. Zhang, G. G. Yen, and J. Lv, “Automatically
+learning for healthcare applications based on physiological signals: designing CNN architectures using the genetic algorithm for image
+A review,” Comput. Methods Programs Biomed., vol. 161, pp. 1–13, classification,” IEEE Trans. Cybern., vol. 50, no. 9, pp. 3840–3854,
+Jul. 2018. Sep. 2020.
+[28] G. M. Zhu et al., “Redundancy and attention in convolutional LSTM
+[6] W. Guo, X. Sheng, H. Liu, and X. Zhu, “Toward an enhanced human–
+for gesture recognition,” IEEE Trans. Neural Netw. Learn. Syst., vol. 31,
+machine interface for upper-limb prosthesis control with combined EMG
+no. 4, pp. 1323–1335, Apr. 2020.
+and NIRS signals,” IEEE Trans. Human-Mach. Syst., vol. 47, no. 4,
+[29] R. Z. Tong, Y. Zhang, H. F. Chen, and H. H. Liu, “Learn the temporal-
+pp. 564–575, Aug. 2017.
+spatial feature of sEMG via dual-flow network,” Int. J. Humanoid Robot.,
+[7] Z. G. Xiao and C. Menon, “A review of force myography research and
+vol. 16, no. 4, 2019, Art. no. 1941004.
+development,” Sensors, vol. 19, no. 20, p. 4557, 2019.
+[30] N. Wang, F. Yang, R. Zhang, and F. Gao, “Intelligent fault diagnosis
+[8] N. Siddiqui and R. H. M. Chan, “Multimodal hand gesture recogni-
+for chemical processes using deep learning multimodel fusion,” IEEE
+tion using single IMU and acoustic measurements at wrist,” Plos One,
+Trans. Cybern., vol. 52, no. 7, pp. 7121–7135, Jul. 2022.
+vol. 15, no. 1, p. 12, 2020.
+[31] A. Krizhevsky, I. Sutskever, and G. E. Hinton, “ImageNet classification
+[9] X. Yang, D. Zhou, Y. Zhou, Y. Huan, and H. Lu, “Towards zero with deep convolutional neural networks,” Commun. ACM, vol. 60, no. 6,
+re-training for long-term hand gesture recognition via ultrasound sens- pp. 84–90, 2017.
+ing,” IEEE J. Biomed. Health Inform., vol. 23, no. 4, pp. 1639–1646, [32] G. Huang, Z. Liu, L. van der Maaten, and K. Q. Weinberger, “Densely
+Jul. 2019. connected convolutional networks,” in Proc. 30th IEEE/CVF Conf.
+[10] Y. Sun et al., “Intelligent human computer interaction based on Comput. Vis. Pattern Recognit. (CVPR), 2017, pp. 2261–2269.
+non redundant EMG signal,” Alexandria Eng. J., vol. 59, no. 3, [33] J. Hu, L. Shen, S. Albanie, G. Sun, and E. Wu, “Squeeze-and-excitation
+pp. 1149–1157, 2020. networks,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 42, no. 8,
+[11] J. Qi, G. Jiang, G. Li, Y. Sun, and B. Tao, “Intelligent human-computer pp. 2011–2023, Aug. 2020.
+interaction based on surface EMG gesture recognition,” IEEE Access, [34] H. Sirong, W. Ruxin, W. Yishan, and L. Ye, “A spatial attention
+vol. 7, pp. 61378–61387, 2019. based convolutional neural network for gesture recognition with HD-
+[12] P. Phukpattaranont, S. Thongpanja, K. Anam, A. Al-Jumaily, and sEMG signals,” in Proc. IEEE Int. Conf. e-Health Netw. Appl. Services
+C. Limsakul, “Evaluation of feature extraction techniques and classi- (HEALTHCOM), 2021, p. 6.
+fiers for finger movement recognition using surface electromyography [35] A. Vaswani et al., “Attention is all you need,” in Proc. 31st Annu. Conf.
+signal,” Med. Biol. Eng. Comput., vol. 56, no. 12, pp. 2259–2271, 2018. Neural Inf. Process. Syst. (NIPS), vol. 30, 2017, pp. 1–11.
+[13] S. Pancholi and A. M. Joshi, “Improved classification scheme using [36] L. M. Duc, V. S. Rathour, T. Q. Sang, M. Quan, P. Brijesh, and L. Ngan,
+fused wavelet packet transform based features for intelligent myoelectric “Multi-module recurrent convolutional neural network with transformer
+prostheses,” IEEE Trans. Ind. Electron., vol. 67, no. 10, pp. 8517–8525, encoder for ECG arrhythmia classification,” in Proc. IEEE EMBS Int.
+Oct. 2020. Conf. Biomed. Health Inform., 2021, pp. 1–5.
+[14] H. Chen, Y. Zhang, G. Li, Y. Fang, and H. Liu, “Surface electromyog- [37] S. Soleymani, A. Dabouei, H. Kazemi, J. Dawson, and N. M. Nasrabadi,
+raphy feature extraction via convolutional neural network,” Int. J. Mach. “Multi-level feature abstraction from convolutional neural networks for
+Learn. Cybern., vol. 11, no. 1, pp. 185–196, 2019. multimodal biometric identification,” in Proc. 24th Int. Conf. Pattern
+Recognit. (ICPR), 2018, pp. 3469–3476.
+[15] W. Xia, Y. Zhou, X. C. Yang, K. S. He, and H. H. Liu, “Toward portable
+[38] L. Xinran, W. Zhongju, and W. Long, “Multimodal fusion for image
+hybrid surface electromyography/a-mode ultrasound sensing for human–
+and text classification with feature selection and dimension reduction,”
+machine interface,” IEEE Sensors J., vol. 19, no. 13, pp. 5219–5228,
+in Proc. J. Phys. Conf., 2021, Art. no. 12064.
+Jul. 2019.
+[39] M. Atzori et al., “Building the ninapro database: A resource for the
+[16] J. Dong, Y. Zhang, H. Zhang, Z. Jia, S. Zhang, and X. Wang,
+biorobotics community,” in Proc. 4th IEEE RAS EMBS Int. Conf.
+“Comparison of axial length, anterior chamber depth and intraocular
+Biomed. Robot. Biomechatronics (BioRob)/Symp. Surgical Robot., 2012,
+lens power between IOLMaster and ultrasound in normal, long and short
+pp. 1258–1265.
+eyes,” Plos One, vol. 13, no. 3, 2018, Art. no. e0194273.
+[40] X. C. Yang, X. L. Sun, D. L. Zhou, Y. F. Li, and H. H. Liu,
+[17] Y. F. Li, K. S. He, X. L. Sun, and H. H. Liu, “Human-machine interface
+“Towards wearable a-mode ultrasound sensing for real-time finger
+based on multi-channel single-element ultrasound transducers: A prelim-
+motion recognition,” IEEE Trans. Neural Syst. Rehabil. Eng., vol. 26,
+inary study,” in Proc. 18th IEEE Int. Conf. e-Health Netw. Appl. Services
+no. 6, pp. 1199–1208, Jun. 2018.
+(Healthcom), 2016, pp. 360–365.
+[18] X. Yang, Y. Zhou, and H. Liu, “Wearable ultrasound-based decoding
+of simultaneous wrist/hand kinematics,” IEEE Trans. Ind. Electron.,
+vol. 68, no. 9, pp. 8667–8675, Sep. 2021.
+[19] J. He, H. Luo, J. Jia, J. T. W. Yeow, and N. Jiang, “Wrist and finger Sheng Wei received the B.S. degree in software
+gesture recognition with single-element ultrasound signals: A compari- engineering from the University of South China,
+son with single-channel surface electromyogram,” IEEE Trans. Biomed. Hengyang, China, in 2019. He is currently pursu-
+Eng., vol. 66, no. 5, pp. 1277–1284, May 2019. ing the M.S. degree with the Zhejiang University of
+[20] X. C. Yang, J. P. Yan, and H. H. Liu, “Comparative analysis of wear- Technology, Hangzhou, China.
+able a-mode ultrasound and sEMG for muscle-computer interface,” IEEE His research interests include biological signal
+Trans. Biomed. Eng., vol. 67, no. 9, pp. 2434–2442, Sep. 2020. processing, human–computer interaction, and deep
+learning.
+[21] P. Boyd and H. H. Liu, “A-mode ultrasound driven sensor fusion for hand
+gesture recognition,” in Proc. Int. Joint Conf. Neural Netw. (IJCNN),
+2020, pp. 1–6.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 12 =====
+
+7734 IEEE TRANSACTIONS ON CYBERNETICS, VOL. 53, NO. 12, DECEMBER 2023
+Yue Zhang received the M.S. degree in com- Honghai Liu (Fellow, IEEE) received the Ph.D.
+puter science and technology from the Zhejiang degree from King’s College, University London,
+University of Technology, Hengyang, China, in London, U.K., in 2003.
+2017, where he is currently pursuing the Ph.D. He is a Chair Professor with the State Key
+degree with the Department of Computer science. Laboratory of Robotics and Systems, Harbin
+His research interests include intelligent system, Institute of Technology, Shenzhen, China, and
+biological signal processing, human–computer also with the School of Computing, University of
+interaction, and adaptive learning methods. Portsmouth, Portsmouth, U.K. He is interested in
+intelligent sensing, biomechatronics, pattern recog-
+nition, intelligent video analytics, intelligent robotics
+and their practical applications with an emphasis on
+approaches that could make contribution to the intelligent connection of per-
+ception to action using contextual information.
+Prof. Liu is an Associate Editor for IEEE TRANSACTIONS ON INDUSTRIAL
+ELECTRONICS and IEEE TRANSACTIONS ON INDUSTRIAL INFORMATICS.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:00:00 UTC from IEEE Xplore. Restrictions apply.
