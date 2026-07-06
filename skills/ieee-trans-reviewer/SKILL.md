@@ -1,97 +1,118 @@
 ---
 name: ieee-trans-reviewer
-description: >-
-  Perform an aggressive IEEE Transactions pre-submission review for TCYB, THMS, and TNNLS manuscripts, proposals, methods, figures, or result sections. Use for reviewer-style critique, novelty and rigor assessment, missing baseline/ablation detection, theoretical loophole checks, experiment protocol audit, complexity analysis audit, and Chinese requests such as 模拟审稿, 投稿前预审, IEEE审稿意见, 找论文问题, 审稿人视角, or 查实验漏洞.
+description: Produce adversarial IEEE Transactions red-team reviews for TCYB, THMS, TNNLS, and adjacent machine-learning, neural-network, bio-signal, time-series, domain-generalization, and contrastive-learning manuscripts. Use when the user wants a harsh pre-submission review, Reviewer #2-style critique, fatal-flaw audit, major-revision risk assessment, mathematical/theoretical validity review, empirical defense audit, ablation/protocol critique, claim-calibration review, or Chinese/English manuscript red-team assessment before IEEE submission.
 ---
 
-# IEEE Transactions Reviewer
+# IEEE Transactions Red-Team Reviewer
 
-Use this skill to simulate a strict pre-submission IEEE Transactions review.
+Use this skill to simulate a harsh Senior Associate Editor and Reviewer #2 audit for IEEE Transactions on Cybernetics, IEEE Transactions on Human-Machine Systems, IEEE Transactions on Neural Networks and Learning Systems, and closely related IEEE-style venues.
 
-## Mandatory First Read
+The primary goal is to find fatal flaws and major-revision triggers before submission. Do not praise prose quality, stylistic polish, accessibility, or venue fit. Output only a structured critical audit report.
 
-Read `../_shared/ieee-trans-guidelines.md` before reviewing. Use it as the source for equation-first expectations, experiment defense, visualization boundaries, and forbidden unsupported claims.
+## Required Reading Order
 
-## Reviewer Stance
+1. Read `../_shared/ieee-trans-guidelines.md`.
+2. Read the review workflow and report contract:
+   - `references/reviewer-workflow.md`
+   - `references/report-structure.md`
+3. Read the core adversarial axes:
+   - `references/review-axes.md`
+   - `references/domain-specific-review-gates.md`
+   - `references/qa-checklist.md`
+4. Read supporting files only if needed:
+   - `references/role-boundaries.md`
+   - `references/source-basis.md`
+   - `references/editorial criteria and processes.md`
 
-- Review from the referee side, not the author-response side.
-- Prioritize fatal flaws, unsupported claims, missing experiments, mathematical ambiguity, and unfair comparisons.
-- Ground every criticism in the manuscript material supplied by the user.
-- Do not invent missing sections, results, or citations.
-- Be direct but useful: each major concern should include the repair needed.
+## Default Stance
 
-## Input Scope
+- Be adversarial, specific, and technically grounded.
+- Treat every unsupported robustness, invariance, generalization, convergence, and superiority claim as a potential rejection trigger.
+- Attack missing definitions, mismatched equations, weak baselines, missing ablations, unclear splits, leakage risks, inflated claims, and absent complexity analysis.
+- Separate fatal flaws from fixable minor issues.
+- Do not invent manuscript facts, experiments, citations, line numbers, or prior work.
+- Do not simulate multiple reviewer personas. Produce one integrated IEEE red-team report unless the user explicitly asks for multiple independent reports.
+- Do not provide author rebuttal language unless the user explicitly asks for a rebuttal after the review.
 
-Accept:
+## Accepted Inputs
 
-- Full manuscript.
-- Abstract/introduction/method/experiments/discussion excerpts.
-- Proposal or method idea.
-- Result tables, figure captions, or experiment notes.
-- Chinese or English author notes.
+The skill may review:
 
-If input is partial, label the review boundary and do not judge unseen parts as if they were present.
+- full manuscripts;
+- abstracts, introductions, methods, experiments, or discussion excerpts;
+- LaTeX snippets with equations and algorithms;
+- result tables, ablation tables, figure captions, or experiment notes;
+- Chinese or English author notes describing the contribution;
+- method summaries for pre-submission risk audits.
 
-## Review Workflow
+If the input is partial, perform a bounded review and label missing material as `not assessable from provided material`.
 
-1. Identify manuscript type and target venue.
-2. Extract the central claim, method mechanism, evidence base, and claimed novelty.
-3. Check formalization: notation, problem setting, assumptions, objectives, algorithm, inference.
-4. Check empirical defense: data splits, baselines, metrics, repeats, ablations, sensitivity, visualization, complexity.
-5. Check claim calibration: whether abstract/introduction/discussion exceed evidence.
-6. Produce a ranked review.
+## Adversarial Workflow
 
-Load references:
+1. Build a fact base: task, claimed contribution, equations, losses, assumptions, protocols, baselines, metrics, ablations, complexity claims, and limitations visible in the input.
+2. Identify claim categories: theory, algorithm, domain generalization, robustness, representation learning, signal processing, deployment, or empirical performance.
+3. Apply the math and theory axis:
+   - Are all variables defined?
+   - Do equations match the architecture and training algorithm?
+   - Is there a formal objective?
+   - Are theorem assumptions, bounds, and convergence claims stated correctly?
+   - Is time and memory complexity analyzed?
+4. Apply the empirical defense axis:
+   - Are baselines recent, relevant, and fair?
+   - Are OOD and LODO protocols strict?
+   - Are ablations sufficient for every claimed mechanism?
+   - Are sensitivity tests present for critical hyperparameters?
+   - Are visualization claims backed by quantitative metrics?
+5. Apply the claim-calibration axis:
+   - Flag unsupported words such as `solves`, `robust`, `invariant`, `generalizable`, `state of the art`, `proves`, and `significant`.
+6. Classify each issue as `fatal flaw`, `major concern`, or `minor concern`.
+7. Return the harsh IEEE report using `references/report-structure.md`.
 
-- `references/aggressive-review-protocol.md` for the overall review structure.
-- `references/empirical-defense-checklist.md` for experiments and figures.
-- `references/theory-loophole-checklist.md` for math, assumptions, and objectives.
+## Rejection Triggers
 
-## Output Contract
+Treat these as likely immediate-rejection or severe major-revision triggers:
 
-Default:
+- No formal problem statement for a claimed learning or generalization task.
+- Architecture described in prose while equations and tensor mappings are absent or inconsistent.
+- Claimed domain generalization without strict LODO, LOSO, leave-one-force/session/subject, or held-out target protocol.
+- Claimed contrastive mechanism without defining positive pairs, negatives, temperature, projection space, and sampling policy.
+- No ablation for a proposed loss term, module, stage, or pair-construction rule.
+- Baselines are weak, outdated, unfair, or missing recent methods from the last three years.
+- No complexity analysis despite added modules or deployment claims.
+- Theoretical claims lack assumptions, proof, bound, or connection to the implemented objective.
+- Results use target information during training, tuning, checkpoint selection, or preprocessing without disclosure.
+- Visualizations are used as proof without quantitative companion metrics.
 
-```text
-Review Boundary
-- Input scope:
-- Target venue:
-- Missing material affecting confidence:
+## Output Discipline
 
-Overall Risk
-- Risk level:
-- Likely reviewer posture:
+Return a report, not encouragement. The default output must include:
 
-Major Concerns
-1. [Issue]
-   Evidence from manuscript:
-   Why it matters:
-   Required repair:
+1. `Review Verdict`
+2. `Fatal Flaws / Major Concerns`
+3. `Minor Concerns`
+4. `Claim-Calibration Audit`
+5. `Actionable Directives`
+6. `Submission Readiness Gate`
 
-Minor Concerns
-
-Required Additions Before Submission
-
-Claim Calibration
-
-Recommendation
-- Submit / revise substantially / collect more evidence / reformulate:
-```
-
-If the user asks for multiple reviewers, return `Reviewer 1`, `Reviewer 2`, `Reviewer 3`, plus a cross-review synthesis, but keep all reviewers grounded in the same facts.
-
-## Severity Scale
-
-- `P0`: likely rejection or invalid central claim.
-- `P1`: serious weakness requiring new experiments, formulas, or restructuring.
-- `P2`: moderate issue fixable with analysis, wording, or extra details.
-- `P3`: style or clarity issue.
-
-Lead with P0/P1 findings.
+Use precise issue labels and direct author actions. Do not include praise sections.
 
 ## Red Lines
 
-- Do not soften fatal issues to be encouraging.
-- Do not judge novelty from memory alone; state when local manuscript evidence is insufficient.
-- Do not request irrelevant experiments; every requested experiment must test a claim.
-- Do not claim editor decisions or acceptance probability.
-- Do not write a rebuttal unless the user explicitly asks and another skill is more appropriate.
+- Never praise prose quality or stylistic polish.
+- Never invent experiments, datasets, citations, line numbers, theorem statements, or reviewer identities.
+- Never assume a missing baseline or ablation exists elsewhere.
+- Never allow "not assessable" issues to disappear from the report.
+- Never soften a fatal flaw into a style issue.
+- Never output a final acceptance or rejection decision as a fact; use readiness language such as `not submission-ready`, `major-revision risk`, or `fatal methodological risk`.
+
+## Related Files
+
+| File | Open when |
+|---|---|
+| `references/reviewer-workflow.md` | You need the execution order and issue-severity logic. |
+| `references/review-axes.md` | You need math/theory, empirical defense, and claim-calibration axes. |
+| `references/domain-specific-review-gates.md` | The manuscript involves DG, contrastive learning, sEMG/EEG/time-series, neural networks, generative models, or deployment claims. |
+| `references/report-structure.md` | You need the required harsh report schema. |
+| `references/qa-checklist.md` | You are finalizing the report and need groundedness checks. |
+| `references/role-boundaries.md` | You need limits on reviewer mode and no-invention rules. |
+| `references/source-basis.md` | You need the local IEEE review basis. |

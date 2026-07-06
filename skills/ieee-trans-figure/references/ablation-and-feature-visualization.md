@@ -1,94 +1,28 @@
-# Ablation and Feature Visualization
+# Ablation And Feature Visualization Rules
 
-Use this reference for common IEEE Transactions figure types.
+## Ablation Panels
 
-## Ablation Bar or Line Plot
+Ablation panels must defend a specific mathematical or algorithmic component. The x-axis should name the removed term, altered hyperparameter, or replaced module. The y-axis should state the metric, unit, and evaluation protocol.
 
-Required:
+Required elements:
 
-- Full model and each variant.
-- Same split and metric as main comparison.
-- Error bars when repeated runs exist.
-- Clear naming of removed or replaced component.
-- Metric direction indicator.
+- Mean performance over folds, seeds, subjects, or trials.
+- Error bars with a declared interval type.
+- Significance marks only with a named statistical test.
+- Labels tied to manuscript notation, such as `$\\mathcal{L}_{\\mathrm{con}}$`, `$\\lambda_{\\mathrm{SD}}$`, or `$\\tau$`.
 
-Interpretation:
+The panel is invalid if it merely shows that the final method is higher without isolating the proposed mechanism.
 
-```text
-The drop caused by removing [component] is largest under [target split],
-which supports the role of [component] in [mechanism]. The smaller change
-under [source/in-domain split] suggests that the component mainly affects
-generalization rather than source-domain fitting.
-```
+## Feature Visualization Panels
 
-## Sensitivity Plot
+t-SNE and PCA panels are diagnostic, not standalone proof. They must be paired with numeric compactness or separation evidence.
 
-Required:
+Required elements:
 
-- Hyperparameter range.
-- Default value marker.
-- Mean and variance.
-- Stable interval.
-- Failure at extremes if present.
+- Fixed random state for stochastic reduction.
+- Domain color when the claim concerns invariance or OOD behavior.
+- Class or gesture marker only when readable at IEEE width.
+- Printed silhouette score or intra-class variance.
+- Caption statement linking the visualization to the exact protocol.
 
-Use for temperature, loss weights, perturbation ratio, sparsity coefficient, mix ratio, pretraining epochs, pair count.
-
-## t-SNE/PCA/UMAP
-
-Required:
-
-- Feature source and checkpoint.
-- Sample selection policy.
-- Projection method and seed.
-- Coloring by class, domain, subject, force, or modality.
-- Same number of samples per group when feasible.
-
-Safe interpretation:
-
-- Compact class clusters support discriminability.
-- Reduced visible domain separation supports alignment only qualitatively.
-- Overlap alone does not prove invariance.
-- Pair with accuracy/F1/domain-classifier/ablation evidence.
-
-## Confusion Matrix
-
-Required:
-
-- Normalization policy.
-- Same class order across panels.
-- Per-class labels.
-- Macro metric in caption or surrounding text.
-
-Use the figure to identify hard classes, not merely to show a colorful square.
-
-## Signal, Spectrum, and Time-Frequency Plots
-
-Required:
-
-- Units, sampling rate, preprocessing, and window length.
-- Same scale across compared panels.
-- Quantitative metric such as RMSE, MMD, DTW, or classification transfer when making fidelity claims.
-- For generated signals, show both temporal and spectral evidence when possible.
-
-## Topographic or Channel-Importance Maps
-
-Required:
-
-- How importance is computed.
-- Channel montage or sensor layout.
-- Colorbar and scale.
-- Statistical or repeated-subject summary if making group-level claims.
-
-Use bounded language when linking maps to physiology.
-
-## Method Overview Figure
-
-Required panels:
-
-- Input and domain/source structure.
-- Encoder and projection spaces.
-- Losses attached to the correct representations.
-- Training-only modules distinguished from inference modules.
-- Stage boundary if two-stage.
-
-Avoid decorative architecture boxes that do not show where the objective acts.
+Do not use feature scatterplots to imply robustness beyond the tested domains.

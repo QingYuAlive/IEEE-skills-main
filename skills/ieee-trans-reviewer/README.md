@@ -1,32 +1,49 @@
 # ieee-trans-reviewer
 
-用于 IEEE Transactions 投稿前的强审稿模拟。它从审稿人视角检查 novelty、数学定义、实验协议、基线公平性、消融链条、复杂度和结论边界。
+`ieee-trans-reviewer` performs harsh pre-submission red-team reviews for IEEE Transactions manuscripts, especially TCYB, THMS, and TNNLS papers involving neural networks, time-series learning, sEMG/EEG, contrastive learning, domain generalization, invariant learning, and robust empirical evaluation.
 
-## 适用场景
+## Purpose
 
-- 投稿前预审。
-- 检查方法是否像“模块堆叠”。
-- 找实验设计漏洞。
-- 找理论/公式/符号问题。
-- 审查图表和结果分析是否过度解读。
+The skill is designed to find rejection-level flaws before submission:
 
-## 必读文件
+- missing mathematical formulation;
+- undefined variables and inconsistent notation;
+- equations that do not match the architecture;
+- absent theoretical bounds or convergence analysis;
+- weak or outdated baselines;
+- missing ablations and sensitivity tests;
+- invalid OOD or LODO protocols;
+- overclaimed robustness, invariance, or generalization;
+- missing complexity or deployment evidence.
 
-触发后必须先读 `../_shared/ieee-trans-guidelines.md`。根据稿件类型读取：
+## Output
 
-- `references/aggressive-review-protocol.md`
-- `references/empirical-defense-checklist.md`
-- `references/theory-loophole-checklist.md`
+The default report is a single integrated IEEE red-team review:
 
-## 输出
+```text
+Review Verdict
+Fatal Flaws / Major Concerns
+Minor Concerns
+Claim-Calibration Audit
+Actionable Directives
+Submission Readiness Gate
+```
 
-默认输出包括：
+The report does not praise writing style, prose polish, accessibility, or venue fit. It prioritizes theoretical loopholes, empirical defense gaps, and required author actions.
 
-1. 审查边界。
-2. 总体风险等级。
-3. Major concerns。
-4. Minor concerns。
-5. 必须补的实验/公式/文字。
-6. 是否建议继续投稿、重写或补实验。
+## Reference Files
 
-该 skill 不写作者回复信；它先把问题挖出来。
+```text
+ieee-trans-reviewer/
+  SKILL.md
+  README.md
+  references/
+    reviewer-workflow.md
+    review-axes.md
+    domain-specific-review-gates.md
+    report-structure.md
+    qa-checklist.md
+    role-boundaries.md
+    source-basis.md
+    editorial criteria and processes.md
+```

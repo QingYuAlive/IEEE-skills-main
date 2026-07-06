@@ -1,20 +1,60 @@
 # ieee-trans-polishing
 
-用于 IEEE Transactions 论文的英文润色、中文到英文改写、段落结构修补和结果分析收紧。它优先保护科学主张和证据边界，而不是把句子改得更夸张。
+`ieee-trans-polishing` polishes and audits academic prose for IEEE Transactions manuscripts, especially TCYB, THMS, and TNNLS papers in neural networks, machine learning, human-machine systems, bio-signal learning, time-series classification, contrastive learning, and domain generalization.
 
-## 适用场景
+## Core Purpose
 
-- 润色 abstract、introduction、method、experiments、discussion。
-- 将中文科研笔记翻译成 IEEE 论文英文。
-- 降低 AI 味、口语化、空泛夸张和重复表达。
-- 修补结果分析中过度解读、证据不足或逻辑跳跃的问题。
+The skill improves language only when the edit strengthens:
 
-## 使用方式
+- mathematical clarity;
+- notation and terminology consistency;
+- protocol-bound empirical claims;
+- ablation and mechanism defense;
+- reviewer-facing risk control.
 
-触发后必须先读取 `../_shared/ieee-trans-guidelines.md`。根据任务读取：
+It does not make underformalized or unsupported claims sound polished. If a sentence needs an equation, objective, OOD protocol, ablation, or complexity metric, the skill flags the missing formal object before polishing.
 
-- `references/claim-calibration.md`: 主张强度、动词、hedging。
-- `references/structural-repair.md`: 段落结构、中文式逻辑、方法段顺序。
-- `references/result-analysis-tightening.md`: 结果分析、消融解释、可视化解读。
+## Active Files
 
-默认输出“润色后文本 + 关键修改说明 + 风险提示”。如果原文有不被证据支持的主张，会保留技术边界而不是强行美化。
+```text
+ieee-trans-polishing/
+  SKILL.md
+  manifest.yaml
+  references/
+    phrasebank-playbook.md
+    style-guardrails.md
+    published-article-patterns.md
+    section-moves.md
+    writing-strategy.md
+    latex-layout.md
+  static/
+    core/
+      stance.md
+      failure-modes.md
+      output-format.md
+    fragments/
+      journal/
+      language/
+      paper_type/
+      section/
+```
+
+## Polishing Standard
+
+Every major edit should answer one reviewer-facing question:
+
+- Is the symbol defined?
+- Is the domain, split, or protocol explicit?
+- Is the claim supported by the stated evidence?
+- Is the verb calibrated to the evidence strength?
+- Is the ablation or limitation visible?
+- Is the equation or algorithm integrated into prose correctly?
+
+## Typical Use
+
+- Polish an abstract while binding each claim to a metric and protocol.
+- Repair a method paragraph that describes architecture without equations.
+- Convert Chinese technical notes into IEEE-style English while preserving notation.
+- Tighten result paragraphs so ablation, OOD protocol, and limitation are explicit.
+- Reduce rejection risk by downgrading unsupported robustness, invariance, or generalization claims.
+- Fix IEEE LaTeX layout and notation presentation when the user asks for typesetting support.

@@ -1,0 +1,50 @@
+name: ieee-trans-figure
+version: 3.0.0
+description: >
+  Static resource map for an IEEE Transactions figure-generation skill.
+  The active backend is Python only. All generated outputs must be
+  reproducible Matplotlib/Seaborn scripts with IEEE-compliant dimensions,
+  typography, color, LaTeX math rendering, statistical uncertainty, and export
+  settings.
+
+always_load:
+  - static/core/contract.md
+  - static/core/stance.md
+  - static/fragments/backend/python.md
+
+active_backend:
+  name: python
+  path: static/fragments/backend/python.md
+  libraries:
+    - matplotlib
+    - seaborn
+    - numpy
+    - pandas
+    - scipy
+    - scikit-learn
+
+references:
+  on_demand:
+    - condition: build or audit the complete IEEE figure specification
+      path: references/figure-contract.md
+    - condition: decide panel layout, visual hierarchy, spacing, axes, and typography
+      path: references/design-theory.md
+    - condition: select a chart family for ML, signal-processing, OOD, ablation, or complexity evidence
+      path: references/chart-types.md
+    - condition: compose recurring IEEE Transactions plot patterns
+      path: references/common-patterns.md
+    - condition: write or audit captions, panel labels, legends, metric names, and statistical notes
+      path: references/figure-legend-conventions.md
+    - condition: final pre-submission QA or reviewer-risk audit
+      path: references/qa-contract.md
+    - condition: inspect reusable Python helper signatures and validation rules
+      path: references/api.md
+    - condition: follow concise implementation walkthroughs
+      path: references/tutorials.md
+    - condition: handle bundled demo references without reading image or PDF assets
+      path: references/demos.md
+
+legacy_disabled:
+  - static/fragments/backend/r.md
+  - references/r-workflow.md
+  - references/r-template-index.md

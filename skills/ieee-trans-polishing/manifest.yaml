@@ -1,0 +1,84 @@
+name: ieee-trans-polishing
+version: 2.0.0
+description: >
+  Declarative manifest for IEEE Transactions polishing. SKILL.md uses this to
+  load only the fragments needed for TCYB, THMS, TNNLS, or generic IEEE-style
+  language optimization after checking mathematical clarity and reviewer defense.
+
+always_load:
+  - ../_shared/ieee-trans-guidelines.md
+  - static/core/stance.md
+  - static/core/failure-modes.md
+  - static/core/output-format.md
+
+axes:
+  paper_type:
+    detect: |
+      Decide what kind of IEEE manuscript or section is being polished. Default
+      to algorithmic for neural-network, machine-learning, time-series,
+      contrastive-learning, and domain-generalization manuscripts.
+    values:
+      research:       static/fragments/paper_type/research.md
+      methods:        static/fragments/paper_type/methods.md
+      hypothesis:     static/fragments/paper_type/hypothesis.md
+      algorithmic:    static/fragments/paper_type/algorithmic.md
+      review:         static/fragments/paper_type/review.md
+    default: algorithmic
+    multi: false
+
+  section:
+    detect: |
+      Identify which section or sections the user wants polished. If unclear,
+      ask only when section role changes the edit. Skip this axis only for
+      standalone prose with no manuscript context.
+    values:
+      abstract:       static/fragments/section/abstract.md
+      intro:          static/fragments/section/intro.md
+      results:        static/fragments/section/results.md
+      discussion:     static/fragments/section/discussion.md
+      conclusion:     static/fragments/section/conclusion.md
+      title:          static/fragments/section/title.md
+      methods:        static/fragments/section/methods.md
+    multi: true
+
+  language:
+    detect: |
+      Detect the source language of the draft. Use zh-to-en when the draft is
+      Chinese or shows strong Chinese-influenced English structure. Otherwise
+      use en.
+    values:
+      en:             static/fragments/language/en.md
+      zh-to-en:       static/fragments/language/zh-to-en.md
+    default: en
+    multi: false
+
+  journal:
+    detect: |
+      Map the target venue to TCYB, THMS, TNNLS, or generic IEEE Transactions.
+      Use tcyb for IEEE Transactions on Cybernetics, thms for IEEE Transactions
+      on Human-Machine Systems, and tnnls for IEEE Transactions on Neural
+      Networks and Learning Systems. Use generic-ieee when the venue is not named.
+    values:
+      tcyb:           static/fragments/journal/tcyb.md
+      thms:           static/fragments/journal/thms.md
+      tnnls:          static/fragments/journal/tnnls.md
+      generic-ieee:   static/fragments/journal/generic-ieee.md
+    default: generic-ieee
+    multi: false
+
+references:
+  on_demand:
+    - condition: needs IEEE article-level polishing patterns for abstracts, introductions, methods, results, discussions, conclusions, or titles
+      path: references/published-article-patterns.md
+    - condition: needs IEEE transition formulas, definition/theorem language, ablation defense, OOD wording, or generalization-bound language
+      path: references/phrasebank-playbook.md
+    - condition: needs IEEE diction calibration for verbs, hedges, boosters, and claim-strength wording
+      path: references/ieee-diction-calibration.md
+    - condition: needs section-specific move orders or claim-evidence repair patterns
+      path: references/section-moves.md
+    - condition: needs academic style, terminology consistency, LaTeX notation integration, or banned hype checks
+      path: references/style-guardrails.md
+    - condition: needs deeper writing-strategy principles for paragraph and section repair
+      path: references/writing-strategy.md
+    - condition: needs IEEE LaTeX layout/typesetting help, including two-column floats, wide tables, equations, algorithms, or figure placement
+      path: references/latex-layout.md

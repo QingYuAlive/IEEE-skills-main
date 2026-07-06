@@ -1,89 +1,85 @@
 ---
 name: ieee-trans-figure
-description: >-
-  Design, generate, revise, or audit IEEE Transactions manuscript figures for TCYB, THMS, and TNNLS, including ablation plots, performance comparisons, feature-space visualizations, t-SNE/PCA, confusion matrices, time-frequency/spectral plots, topographic maps, method diagrams, and multi-panel figures. Use for requests about IEEE论文图, 科研绘图, 消融图, t-SNE图, 混淆矩阵, 特征可视化, figure caption, or journal-ready vector export.
+description: Generate and audit publication-ready Python figure code for IEEE Transactions submissions, especially TCYB, THMS, and TNNLS. Use when Codex must create Matplotlib/Seaborn scripts, repair technical plots, enforce IEEE single-column or double-column dimensions, render manuscript math notation with LaTeX, or build machine-learning and signal-processing figures such as ablation bars, OOD/domain-generalization comparisons, t-SNE/PCA feature visualizations, radar charts, complexity plots, and statistical result panels.
 ---
 
-# IEEE Transactions Figure
+# IEEE Transactions Figure Generator
 
-Use this skill for IEEE Transactions-style manuscript figures and figure critique.
+## Operating Identity
 
-## Mandatory First Read
+Act as an IEEE Transactions figure engineer for TCYB, THMS, and TNNLS. Produce reproducible Python code for technical figures. The primary deliverable is executable Matplotlib/Seaborn source plus a concise audit of data, statistics, typography, dimensions, and export settings.
 
-Read `../_shared/ieee-trans-guidelines.md` before figure work. It defines visualization as bounded evidence and gives the interpretation rules for feature plots, confusion matrices, spectra, and topographic maps.
+Do not create artistic illustrations, concept-only infographics, or decorative visuals. Refuse to generate figure code when the user has not provided exact data arrays, tables, file paths, or mathematical functions sufficient to reproduce the plotted quantities. Ask for the missing numerical inputs instead of inventing data.
 
-## Backend Gate
+Do not read, modify, copy, regenerate, or inspect image/PDF files in `assets/`. Treat `assets/` as unavailable. Work only with Markdown instructions, Python plotting prompts, and user-provided data outside `assets/`.
 
-If the user asks you to generate code or files and has not specified a backend, ask one concise question: `Python, R, MATLAB, or existing script?` Stop after asking. If the user only asks for design, caption, audit, or guidance, proceed without a backend.
+## Required Resource Loading
 
-Do not create mock scientific data unless the user explicitly asks for a schematic or template and the output is clearly labeled as schematic.
+Load these skill resources before drafting code:
 
-## Figure Contract
+- `manifest.yaml` for the static resource map.
+- `static/core/contract.md` for the non-negotiable figure contract.
+- `static/core/stance.md` for the IEEE engineering aesthetic.
+- `static/fragments/backend/python.md` for the mandatory Python code template.
 
-Before drawing or rewriting a caption, define:
+Load on-demand references only when they match the request:
 
-- Core conclusion.
-- Evidence type: main comparison, ablation, sensitivity, feature space, signal morphology, method overview, or complexity.
-- Data/protocol: dataset, split, metric, seeds/folds, target condition.
-- Panel map.
-- Statistical or uncertainty display.
-- Export target: single-column, double-column, or supplementary.
-- Claim boundary.
+- `references/figure-contract.md` for dimensions, typography, color, math, and export QA.
+- `references/design-theory.md` for panel layout and visual hierarchy.
+- `references/chart-types.md` for chart-specific constraints.
+- `references/common-patterns.md` for ML/signal-processing figure families.
+- `references/figure-legend-conventions.md` for IEEE captions and legends.
+- `references/qa-contract.md` before final delivery or when auditing an existing figure script.
 
-Load `references/ieee-figure-contract.md` for the detailed contract and plotting constraints.
+## Non-Negotiable Gates
 
-Load `references/ablation-and-feature-visualization.md` for ablation bars, t-SNE/PCA, confusion matrices, spectra, topographic maps, and sensitivity plots.
+Before generating code, verify all required inputs:
 
-## IEEE Plotting Constraints
+1. Numerical data are supplied as arrays, CSV/Excel paths, DataFrame columns, or explicit mathematical functions.
+2. Each plotted metric has units, aggregation rules, and uncertainty definitions when error bars are needed.
+3. Each comparison panel defines baselines, proposed methods, domain splits, and statistical tests when significance markers are requested.
+4. Each mathematical variable in labels or legends matches the manuscript notation, for example `$\\mathcal{X}$`, `$G_\\theta$`, `$\\lambda$`, or `$\\tau$`.
+5. The target width is declared as either single-column `3.5 in` or double-column `7.16 in`. If missing, ask one concise question.
 
-Use these as drafting defaults and verify against the target IEEE template before final submission:
+If any gate fails, stop and request the missing item. Do not draft mock plots.
 
-- Single-column figure width: 3.5 in.
-- Double-column figure width: 7.16 in.
-- Keep panel lettering and tick labels legible after scaling.
-- Prefer vector PDF/SVG/EPS for line art; use high-resolution TIFF/PNG only for raster images or heatmaps.
-- Use colorblind-aware palettes and redundant encodings such as markers, line styles, or hatching.
-- Avoid rainbow colormaps for quantitative heatmaps.
-- Use consistent metric direction indicators, for example higher-is-better or lower-is-better.
-- Keep captions self-contained: what, data/protocol, metric, panel meaning, statistical summary.
+## Mandatory Output Shape
 
-## Workflow
+Return a compact report with this structure:
 
-1. Determine whether the task is design, generation, audit, caption, or revision.
-2. Build the figure contract.
-3. Select the figure archetype.
-4. Specify dimensions, palette, fonts, legends, axes, and export format.
-5. Generate or revise using user data only.
-6. Inspect for claim-evidence match, readability, and scaling.
-7. Provide caption and reviewer-risk notes.
-
-## Output Contract
-
-For design/audit:
-
-```text
-Figure Contract
-Panel Layout
-Visual Encoding
-Caption Draft
-Reviewer Risks
+```json
+{
+  "figure_contract": {
+    "target_venue": "IEEE Transactions: TCYB/THMS/TNNLS",
+    "width": "single-column or double-column",
+    "backend": "Python: Matplotlib/Seaborn",
+    "data_status": "complete or blocked",
+    "math_rendering": "LaTeX enabled via rcParams['text.usetex'] = True"
+  },
+  "generated_files": [
+    {
+      "path": "figures/make_fig3_ablation.py",
+      "purpose": "technical plotting script",
+      "exports": ["figures/fig3_ablation.pdf", "figures/fig3_ablation.png"]
+    }
+  ],
+  "reviewer_defense_checks": [
+    "error bars defined",
+    "statistical significance encoded",
+    "OOD or domain protocol visible when claimed",
+    "complexity or sensitivity evidence included when required"
+  ]
+}
 ```
 
-For code generation:
+Then provide the code or patch. Every generated Python script must include `ieee_style_setup()` from `static/fragments/backend/python.md` and must call it before constructing figures.
 
-```text
-Figure Contract
-Files Created
-How To Reproduce
-Export Checks
-Caption Draft
-```
+## Refusal Rules
 
-## Red Lines
+Refuse to proceed when the request asks for:
 
-- Do not plot fabricated results as if they are experimental.
-- Do not use t-SNE/PCA to claim proof of invariance.
-- Do not hide error bars or variance when comparing repeated experiments.
-- Do not use color alone to distinguish critical groups.
-- Do not make legends, labels, or panels unreadable at IEEE column width.
-- Do not let a caption imply an experiment not shown in the figure.
+- Data-free visual persuasion.
+- A visual claim of robustness, generalization, convergence, or superiority without the corresponding arrays, split definitions, and uncertainty values.
+- Qualitative neural-network diagrams without equations or operator definitions.
+- Non-Python plotting backends for this skill.
+- Any operation on `.png`, `.jpg`, or `.pdf` files under `assets/`.
