@@ -1,0 +1,1169 @@
+
+
+===== PAGE 1 =====
+
+15476 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+Extended Invariant Risk Minimization for Machine
+Fault Diagnosis With Label Noise and Data Shift
+Zhenling Mo, Zijun Zhang , Senior Member, IEEE, Qiang Miao , Senior Member, IEEE,
+and Kwok-Leung Tsui
+Abstract—Incorrect labels as well as the discrepancy between conditions [6], [7]. In practice, NLs and data distribution
+training and test domain data distributions can significantly shifts are inevitable in machine fault diagnosis. To enhance
+affect the effectiveness of supervised data-driven models in
+the practical value of data-driven models for machine fault
+machine fault diagnosis applications. Such a challenge can be
+diagnosis, it is imperative to develop a fault diagnosis model
+characterized as the noisy label-domain generalization (NL-DG)
+problem. In this article, the extended invariant risk minimization that is both tolerant to label noise (LN) and capable of
+(EIRM) is developed, which incorporates flat minima seeking to generalizing across domains.
+address the NL-DG challenge. The ability of handling NL-DG is In existing literature of the machine learning community,
+realized by shifting the gradient penalty base from the dummy
+addressing LNs focused on LN robust learning [8] while
+classifier to the entire model. EIRM is shown to be closely related
+tackling data distribution shifts was regarded as one major
+to locating a flat minimum, which is crucial for label noise (LN)
+robustness and model generalization. Explorations on function task in domain generalization (DG) [9]. A significant focus
+smoothness and algorithm convergence are offered to understand of recent studies in LN robust learning is designing robust
+EIRM from the theoretical aspect. An efficient implementation risk functions [8]. The designed function is considered robust
+of EIRM is also developed to construct the fault diagnosis
+in the sense that the global minima are unchanged even if
+model. The EIRM-based fault diagnosis method is compared with
+some portions of labels are corrupted [10]. One technique
+strong benchmarks on multiple NL-DG tasks using actuator and
+gearbox fault datasets. Results indicate that the EIRM-based enabling such robustness is the symmetric condition [10].
+method on average is more effective than the benchmarks. The Inspired by the symmetric condition, different symmetric
+code is available at https://github.com/mozhenling/doge-eirm. robust risk functions were studied, such as the mean absolute
+Index Terms—Domain generalization (DG), fault diagnosis, error risk function [10], the symmetric cross-entropy (SCE)
+flat minimum, invariant learning, label noise (LN) robustness. risk function [11], and the normalized risk function [12].
+In general, robust risk functions can facilitate training
+I. INTRODUCTION
+various risk minimization-based data-driven models in a
+INDUSTRIAL machine fault diagnosis can be challeng- straightforward plug-in approach to tackle LNs. However,
+ing since the presence of noisy labels (NLs) and data relying solely on designing the robust risk function may not
+distribution shifts can greatly diminish the performance of sufficiently address the challenges imposed by DG. To realize
+many data-driven methods [1], [2]. Incorrect machine fault DG, one popular direction is to learn invariant features [13].
+labels are often introduced due to the similarity among fault The invariant features are informative about the labels and
+patterns [3], less experienced labelers [4], or improper data shared across domains, which can enable model generalization
+management [5]. In addition, data distribution shifts are often beyond training domains [14]. A notable approach in learning
+induced by data collected under different machine operation invariant features is invariant risk minimization (IRM) [15].
+The key idea of IRM is penalizing a dummy classifier to
+Received 14 May 2024; revised 12 October 2024; accepted 13 January
+be simultaneously optimal on multiple training domains.
+2025. Date of publication 5 February 2025; date of current version
+6 August 2025. This work was supported in part by the Shenzhen-Hong However, IRM mainly concentrated on elevating model DG
+Kong-Macau Science and Technology Category C Project under Grant performance under LN-free settings. Extending IRM for
+SGDX20220530111205037, in part by the Hong Kong RGC General Research
+NL-DG problems, especially serving machine fault diagnosis
+Fund Project under Grant 11213124, in part by Collaborative Research Fund
+Project under Grant C1049-24GF, in part by Hong Kong ITC Innovation and tasks, remains unexplored and several critical questions
+Technology Fund Project under Grant ITS/034/22MS, in part by Guangdong demand in-depth investigations.
+Provincial Basic and Applied Basic Research - Offshore Wind Power Joint
+First, how can IRM be extended to take both LN and
+Fund Project under Grant 2022A1515240066, in part by Guangdong Province
+Technological Project under Grant 2023A0505030014, and in part by InnoHK DG settings into account? Previous methods, such as IRM
+Initiative, The Government of the HKSAR, and Laboratory for AI-Powered developed for addressing distribution shifts of data, are not
+Financial Technologies. (Corresponding author: Zijun Zhang.)
+designed for tackling corruptions of labels. Similarly, methods
+Zhenling Mo and Zijun Zhang are with the Department of Data Science,
+College of Computing, City University of Hong Kong, Hong Kong SAR concerning LNs alone may ignore changes in data distribu-
+(e-mail: zijzhang@cityu.edu.hk). tions. Thus, a new method for handling both LN and DG
+Qiang Miao is with the College of Electrical Engineering, Sichuan Univer-
+problems is imperative.
+sity, Chengdu, Sichuan 610017, China.
+Kwok-Leung Tsui was with the Grado Department of Industrial and Systems Next, what is the design of a practical risk function
+Engineering, Virginia Tech, Blacksburg, VA 24061 USA. He is now with possessing the NL-DG capability for machine fault diag-
+the Department of Manufacturing, Systems, and Industrial Engineering, The
+nosis applications? Frameworks for addressing LN and DG
+University of Texas at Arlington, Arlington, TX 76019 USA.
+Digital Object Identifier 10.1109/TNNLS.2025.3531214 problems individually have been presented [8], [9]. Among
+2162-237X © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence
+and similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 2 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15477
+reported frameworks for LN and DG problems, new develop- proposed EIRM, which, to the best of our knowledge,
+ments often happen in the risk function design. Discussions were not studied previously.
+in risk functions for NL-DG problems in data-driven machine From the application aspect, they are given as follows.
+fault diagnosis are scarce and it is valuable to develop one for 1) To verify the advantage of EIRM, extensive NL-DG
+ease of use under such a real application. tasks are designed using gearbox and actuator fault
+Moreover, what is theoretical and experimental evidence datasets. EIRM is then compared with 15 strong bench-
+supporting the developed methodology for machine fault diag- marks on designed tasks. Based on average classification
+nosis considering NL-DG? Theoretical insights can deepen accuracies on test domains, EIRM outperforms all
+the understanding of the developed method. Meanwhile, benchmark methods. Quantitatively, EIRM also achieves
+experimental results of benchmarking with the state-of-the-art an improvement of more than 4% compared to the
+methods can validate the effectiveness of the proposed method. majority of the benchmark methods.
+Thus, it is crucial to obtain insights from both theoretical and The remaining part of this work is organized as follows.
+experimental aspects for a method developed for machine fault Section II distinguishes our study from previous studies, spec-
+diagnosis considering NL-DG. ifies the problem setting concerned, and details the frequent
+To address the abovementioned questions, recent theoretical notations in this work. Section III begins with the formulations
+and empirical findings regarding LN robustness and DG in of IRM and elaborates on the derivations of EIRM and the
+machine learning field that inspire this research are described corresponding fault diagnosis method. Section IV offers theo-
+as follows. One recent theoretical finding presented that under retical insights of EIRM via studying the function smoothness
+the correct label dominant condition, the correct label-based and convergence properties. Section V presents experimental
+loss was smaller than the incorrect label-based loss [16]. Such studies based on actuator and gear datasets. Section VI offers
+a finding implied that the incorrect label could lead to a the conclusion.
+perturbation of the loss. Thus, finding flat minima during
+model optimization to avoid perturbations might improve the
+II. PRELIMINARIES
+LN robustness. In fact, another study [17] has visually and
+This section first surveys the related literature to identify
+numerically shown that finding flat minima is beneficial for
+the boundaries of previous works as well as further reflect
+combating LNs. Regarding DG, recent theoretical and empiri-
+the significance and novelty of this study. Next, the problem
+cal findings indicated that seeking flat minima could reduce the
+setting and notations are introduced to facilitate subsequent
+DG gap [18]. Inspired by existing developments and findings,
+descriptions of methodological developments.
+this article proposes the extended IRM (EIRM) framework
+with incorporating the flat minima optimization to gain the
+ability of tackling NL-DG problems, which, to the best of A. Related Literature
+our knowledge, is the first time in literature. Furthermore, 1) LN Robust Risk Functions: Risk functions designed by
+theoretical exploration is conducted to build a solid ground for symmetric conditions are called symmetric robust functions,
+understanding the properties of EIRM. EIRM is next applied to which enjoy a theoretical guarantee of robustness to LNs [10],
+machine fault diagnosis, a critical and widely studied industrial [11], [12]. However, symmetric robust functions can bring
+problem facing LN and DG issues, to further demonstrate its difficulties into model training, given that certain settings are
+practical values. applied [12], [19]. To remedy this, a number of general-
+The major contributions are summarized as follows. ized risk functions were developed, including the generalized
+From the methodological aspect, they are given as follows. cross-entropy (CE) risk function [19], the Jensen–Shannon
+1) We propose a novel EIRM by penalizing a dedicated divergence (JSD) risk function [20], the Taylor CE risk func-
+gradient norm approximation of the entire model. The tion [21], and the active negative loss (ANL) [22]. These
+formulation of EIRM offers a solution for synergizing generalized functions aim to bridge symmetric robust risk
+both learning invariance and flat minima optimization to functions with those that are more conducive to training.
+overcome the NL-DG challenge. Besides symmetric conditions, other conditions or techniques
+2) We develop an efficient implementation of EIRM to for designing robust risk functions have also been studied.
+train models for machine fault diagnosis under LNs and For instance, Zhou et al. [23] showed that some asymmetric
+various machine working conditions. In addition, EIRM conditions can also enable robust risk functions. Wei et al.
+can be applied to train various risk function-based data- [24] investigated label smoothing techniques to enhance the
+driven models in other applications. robustness against LNs of the risk function. The conditions
+From the theoretical aspect, they are given as follows. that benefit LN robustness via minimizing the f -divergence
+1) To understand the proposed EIRM, we explore the were studied [25]. A prediction clipping technique to allevi-
+conditions under which the proposed risk function can ate overfitting to LNs was proposed in [26]. This study is
+reach different levels of smoothness in Lemmas 2–4. distinct from studies on LN robust methods in three ways.
+We also investigate the global and local convergences of First, this study concerns both tackling LNs and addressing
+the proposed optimization strategy in Theorems 1 and 2. the distribution shifts of data. Second, we attribute the LN
+The presented theories imply that the proposed method robustness to the flat minima optimization rather than the
+prefers flat minima during optimization. The smoothness symmetric condition [10], the asymmetric condition [23],
+analysis and convergence analysis are tailored for the or overfitting alleviation strategies [25]. Third, our formulation
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 3 =====
+
+15478 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+of the practical risk function includes an approximation to is that we not only leverage the power of flat minima but
+gradient penalty of the whole model, which was not considered also rely on invariant feature learning based on the framework
+in designing the robust risk functions in the literature. of IRM. The integration of invariance from IRM with the
+2) IRM-Related DG Methods: Methods concerning the robustness from flat minima distinguishes our study from the
+data, gradient, and feature aspects have been developed to previous literature [17], [18], [39], [40], [41], [42], [43], [44],
+address DG problems [9], [27]. From the data aspect, data [45], [46], [47], [48], [49].
+augmentation techniques, such as mixing up data, were fre- 4) Convergence: The global and local convergences of
+quently discussed for enabling DG [28]. From the gradient gradient descent (GD) algorithms based on empirical risk
+aspect, manipulations of domain gradients were explored, minimization (ERM) were studied in-depth in previous stud-
+such as gradient masking [29]. From the feature aspect, ies [50], [51]. In order to facilitate theoretical analysis, it was
+learning cross-domain invariant features was pervasively inves- imperative to make assumptions, e.g., some levels of smooth-
+tigated [13], [14], [15], [30]. One representative work of invari- ness, the infinite iteration number, and the Polyak–Lojasiewicz
+ant feature learning is IRM, which elicits invariant features via condition [52], [53], [54], [55]. In particular, the conditions
+forcing the dummy classifier to be optimal on multiple training required for analyzing global convergence are often stricter
+domains. The idea of IRM then generated a surge of follow-up than those for local convergence as shown in a bunch of past
+studies under different settings. For instance, the idea of studies on global convergence, such as [55], [56], and [57].
+information bottleneck (IB) was introduced to IRM to enhance It can be noted that although some basic assumptions required
+its efficacy in linear classifications [31]. A local sparsity for convergence analysis may be similar, the theoretical deriva-
+constraint was proposed to augment the formulation of IRM to tions and developments vary significantly across algorithms
+facilitate feature extractions [32]. Game theory was applied to and loss functions. The reason is that the gradient character-
+IRM to achieve Nash equilibrium among domains [33]. Other istics of different algorithms and loss functions are largely
+interesting subsequent works include the nonlinear IRM [34], different, necessitating distinct treatments to analyze the con-
+Bayesian IRM [35], meta IRM [36], globally sparse IRM [37], vergences. Hence, our theoretical analysis of convergences
+and domain-agnostic IRM [38]. In general, two major gaps significantly departs from past studies [50], [51], [52], [53],
+remain unfilled by existing studies [15], [31], [32], [33], [54], [55], [56], [57] by concerning on the proposed risk
+[34], [35], [36], [37], [38]. First, IRM and its variants still minimization framework.
+only assumed distribution shifts on data, while pollutions
+on labels were ignored. Second, rare attempts were made B. Problem Description
+by IRM-related studies to methodologically and theoretically We first start with a general problem, which, from the practi-
+bridge learning invariance with flat minima optimization. Our cal aspect, well matches machine fault diagnosis tasks depicted
+study is then significantly different from the existing studies in the later section of case studies. This work considers a
+on IRM and its variants by filling these two gaps. general model f as a composition of a feature extractor g
+3) Flat Minima: In training network models, converging to and a classifier/predictor h, i.e., f = h ◦g. The general model
+a “flat” minimum often enabled models to possess better gen- f is parametrized by θ ∈ Rd, which contains d independent
+eralization performance compared to converging to a “sharp” real-valued parameters.
+minimum [39], [40]. This phenomenon has inspired a plethora The data variable and label variable are denoted as X
+of methods for model generalization under a standard machine and Y, respectively. They follow a joint distribution P(X, Y).
+learning setup, assuming no distribution shifts in data and no A domain denoted as e enjoys a distinct data–label joint
+mislabeled samples [41], [42]. Recently, methods optimizing distribution P(Xe, Y). In DG, it means that given the domain
+models toward flat minima to tackle DG problems were also e = i and e = j, if i ̸= j, then P(Xi, Y) ̸= P(X j, Y) [9].
+proposed. Yet, from the methodological perspective, many The notation e will be ignored if the domain information is
+methods were inspired or derived from the weight averaging unnecessary.
+technique [41] or the sharpness aware optimization [43] by For clarity, we embody X as the data matrix X ∈ Rm×n
+taking into account DG characteristics. For instance, different and Y as the label vector y ∈ Zn. A data point is x ∈ R,
+weight averaging or manipulation techniques were proposed to while a data sample is x = [x , x , . . . , x ]T ∈ Rm. Moreover,
+1 2 m
+facilitate identifying flat minima for DG, such as dense weight a data sample x is inherently associated with a label y ∈ Z
+averaging [18], diverse weight averaging [44], and ensemble named correct label. Then, we have X = [x , x , . . . , x ] and
+1 2 n
+weight averaging [45]. Regarding flat minima optimization, y = [y , y , . . . , y ]T ∈ Zn. Let c be the number of classes.
+1 2 n
+Zhang et al. [46] first defined the zero- and first-order flat- The elements of y are integers from 0 to c−1. As a result, the
+ness and proposed a novel optimizer to find regions of the LN can be introduced by a transition matrix T with entry T
+ij
+so-defined flatness for DG. Wang et al. [47] proposed to for i, j = 0, 1, . . . , c−1. An entry T describes the conditional
+ij
+align gradient directions in implementing the sharpness aware probability of flipping label i to label j. The transition matrix
+optimization. In the context of flat minima for DG, Shin et al. considered in this study is defined as follows:
+[48] proposed to align source domain loss landscapes with T = . p (cid:0) y˜ = j|y = i (cid:1) = p (cid:0) y˜ = j|y = i, x (cid:1). (1)
+perturbed domain loss landscapes. Regarding fighting LNs, ij
+finding flat minima is also beneficial [43]. Some recent work In (1), y˜ is the observable label, which means that it can be
+hence proposed to introduce stochastic noise into optimizers either the correct label or the incorrect label. In addition, the
+to help find flat minima to combat LNs [17], [49]. One major transition matrix defined in (1) corresponds to the instance-
+difference between this study and prior studies of flat minima independent LN modeling, which has been commonly seen
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 4 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15479
+in [8]. This means that the LN is introduced via a mechanism penalizing the gradient of a dummy predictor as follows
+independent of the data instance. Another critical assumption according to [15]:
+i [ t s o 23 th a ]. a s t It t t h h is e e a c l L o so N rr . t e h c M e t l r o a e b r a e e s o o l v n is e t r d h , o a t t m h t e i h n e a in i n n s t c , ta o i n . r e r c . e e , c - T t in i l i d a > b ep el m en c a a d x n e i n ̸= b t e j T L re i N j fe [ r 1 c r 6 e a ] d n , m g in |D 1 tr | e X ∈D tr Re(g) + λ (cid:13) (cid:13)∇ h|h=1 Re(h ◦ g)(cid:13) (cid:13) 2 (2)
+be further categorized into symmetric noise and asymmetric
+where λ is the penalty coefficient, and the dummy predictor
+noise [8]. Symmetric noise means that T = T , while the
+ij ji is denoted as h = 1. The dummy predictor is obtained via the
+asymmetric one means that T ̸= T .
+ij ji
+reparameterization trick, which avoids the complex Hessian
+The NL-DG problem targeted in this study considers the
+computation of the predictor model [15]. As shown later, there
+impact of both NLs and domain information in modeling.
+exists an alternative that offers new insights.
+Specifically, the data have domain information denoted as Xe,
+while the corrupted labels are denoted as y˜. The ultimate goal
+is to learn f by adjusting θ such that f can successfully B. Extended IRM
+classify the unseen data with correct labels. To achieve this
+As shown in (2), it is observable that the gradient penalty
+goal, a risk function R can be employed to measure the risk
+of IRM is based solely on the dummy predictor. Enlightened
+of obtaining a poor θ based on the training domains D . It is
+tr by this idea, we propose developing a gradient penalty for
+also worth noting that the value of R is determined by the
+the entire model rather than only the dummy predictor in
+formulation of R, θ, Xe (or e for short), and y˜.
+pursuing simultaneous optimality across training domains to
+further enhance the invariant feature learning.
+C. Notations
+Next, we show that if the gradient penalty is developed
+Besides notations defined previously, the frequently referred based on the whole model f , such an extension of IRM can
+notations are further elaborated. be linked to flat minima optimization. Recall that the model
+1) R is the risk function. To be more specific about a vari- f can be parametrized by θ. Then, the first possible extension
+able such as θ, the risk function is then denoted as R(θ). of IRM can be formulated as follows:
+O is n a c p e p t l h ie e d d , o su m c a h in as va R ri e a . b T le o i d s i e st m in p g h u a i s s i h ze d d i , ff t e h r e en s t up fo e r r m sc s ri o p f t m θ in |D 1 | X Re(θ) + λ (cid:13) (cid:13)∇Re(θ)(cid:13) (cid:13) 2. (3)
+R, different hats are given. For instance, R, R ¯ , and R ˜ tr e∈D tr
+depict risk functions of different formulations. It is known that the computation complexity of Hessian
+2) θ′ represents a different value of θ. Similarly, other matrix is O(d2), where d is the dimension of θ. Hence,
+values of θ can be identified by different superscripts. computing the gradient of the risk function in (3) is not
+The element of θ is indexed by the subscript. For efficient since it requires the computation of the Hessian
+instance, the ith element is presented as θ i . matrix. One simple solution is to sacrifice a certain level of
+3) ∇R(θ) is the gradient of R with respect to θ, while computational accuracy for a higher efficiency.
+the Hessian is ∇2R(θ). For simplicity, the gradient and For convenience, let us ignore the domain variable e and
+the Hessian can be further denoted as ∇R and ∇2R, consider the approximation on one domain. Then, let us
+respectively. consider the first-order Taylor expansion around θ as follows:
+4) ∥·∥ describes the L2-norm by default. For referring
+to other norms, subscripts are employed. For instance, R(θ + v) ≈ R(θ) + ∇R(θ)T v
+∥·∥ L1 describes the L1-norm. ⇒ R(θ + v) − R(θ) ≈ ∇R(θ)T v (4)
+5) L stands for the Lipschitz constant. To denote different
+values, subscripts are employed. For example, L –L where v is a vector of small values with the same dimension as
+1 3
+are three different Lipschitz constants. θ. In addition, ∇R(θ)T v is known as the directional derivative
+6) D is a set of training domains. Its dimension is |D |. of R at θ in the direction of v.
+tr tr
+Hence, it can be perceived as {1, 2, . . . , |D |}. The test The following question is that among all the possible
+tr
+domain D is similarly comprehended. directions, which one is representative? One natural answer
+te
+7) λ, γ , and µ are positive finite scalars. to the question is the steepest direction under a constraint
+∥v∥ ≤ ρ and ρ ∈ R. To proceed further, let us consider the
+Cauchy–Schwarz inequality as follows:
+III. METHODOLOGY
+In this section, the formulation of IRM is first briefed. Next, (cid:13) (cid:13)∇R(θ)T v (cid:13) (cid:13) ≤ ∥∇R(θ)∥∥v∥ (5)
+the step-by-step development of EIRM from IRM is elaborated
+and the EIRM for machine fault diagnosis tasks is presented. where the equality holds when v∗ = ξ∇R(θ) and ξ ∈ R. Note
+that ∥v∗∥ ≤ ρ ⇒ ξ = ρ(1/∥∇R(θ)∥), which implies that
+v∗ = ρ(∇R(θ)/∥∇R(θ)∥). Thus, the steepest direction is just
+A. Brief of IRM
+the gradient direction. Let γ = (ρ/∥∇R(θ)∥) for simplicity.
+The essential idea of IRM is to learn invariant features Then, we have the following approximation:
+by forcing the single predictor to be simultaneously optimal
+cross training domains [15]. The idea was implemented by R(θ + γ ∇R(θ)) − R(θ) ≈ γ ∥∇R(θ)∥2. (6)
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 5 =====
+
+15480 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+Note that θ′ = θ + γ ∇R(θ) is the steepest ascent. By plug- Algorithm 1 One Epoch of Gradient Update of EIRM
+ging it into (6), we obtain the following: 1. Begin the epoch
+2. Backup model parameter θ◦ ← θ
+R (cid:0)θ′(cid:1) − R(θ) ≈ γ ∥∇R(θ)∥2. (7) 3. Enumerate training domains D :
+tr
+Thus, the second possible extension of IRM can be obtained 3-1. Obtain a copy of parameters after the first enter:
+as follows: θ ← θ◦
+3-2. Obtain a batch sample of domain e
+min 1 X Re(θ) + λ (cid:2) Re(cid:0)θ′(cid:1) − Re(θ)(cid:3) 3-3. Compute the domain risk Re(θ)
+θ |D |
+tr e∈D
+tr
+3-4. Compute the domain gradient ∇Re(θ)
+s.t. θ′ = θ + γ ∇Re(θ). (8) 3-5. Gradient ascent update: θ′ = θ + γ ∇Re(θ)
+3-6. Compute the domain risk at the ascent point:
+Re(cid:0)θ′(cid:1)
+There are two important observations. First, the gradient
+3-7. Compute the domain gradient at the ascent point:
+computation of the risk function can be implemented more ∇Re(cid:0)θ′(cid:1)
+efficiently. To check this, we only need to first compute
+3-8. Compute the approximated domain gradient:
+∇Re(θ), update the parameter θ′ = θ + γ ∇Re(θ) after a
+backup, compute ∇Re(θ′), and obtain the approximate gra- ∇R ¯ e(θ) = ∇Re(θ)
+dient as follows: + λ (cid:2) Re(cid:0)θ′(cid:1) − Re(θ)(cid:3)(cid:2)∇Re(cid:0)θ′(cid:1) − ∇Re(θ)(cid:3)
+1 X ∇Re(θ) + λ (cid:2)∇Re(cid:0)θ′(cid:1) − ∇Re(θ)(cid:3). (9) 3-9. Collect ∇R ¯ e(θ)
+|D |
+tr e∈D
+tr
+4. Average the collected domain gradients
+It is observable that the computation only incurs a linear 5. Obtain a copy of parameters θ ← θ◦
+complexity O(d). The second observation is that the risk 6. Gradient update by an optimizer. e.g., Adam.
+difference, Re(θ′) − Re(θ), can be regarded as a measure of 7. End the epoch
+“flatness” round θ. It then bridges learning invariance with
+finding flat minima.
+In practice, the optimization problem is usually nonconvex
+and the learning rate γ can be imperfect. It means that
+the risk difference Re(θ′) − Re(θ) can be negative due to
+overshooting, leading to an undesired property of measuring
+flatness. To solve the problem, the third possible extension of
+IRM can be proposed as follows:
+min 1 X Re(θ) + λ (cid:2) Re(cid:0)θ′(cid:1) − Re(θ)(cid:3)2
+θ |D | 2
+tr e∈D
+tr
+s.t. θ′ = θ + γ ∇Re(θ). (10)
+The gradient of the risk function can be approximated as
+follows:
+1 X ∇Re(θ) + λ (cid:2) Re(cid:0)θ′(cid:1) − Re(θ)(cid:3)(cid:2)∇Re(cid:0)θ′(cid:1) − ∇Re(θ)(cid:3).
+|D |
+tr e∈D
+tr
+Fig. 1. Fault diagnosis model training based on EIRM and 1-D LeNet.
+(11)
+from [59] and employed in this study. The 1-D LetNet is a
+Finally, the proposed EIRM is based on (10). To compute 1-D variant of the celebrated LetNet-5 network. Training the
+its gradient in (11), we only need to obtain Re(θ), compute fault diagnosis model is illustrated in Fig. 1.
+∇Re(θ), update parameter θ′ = θ + γ ∇Re(θ) after a backup,
+compute Re(θ′) and ∇Re(θ′), and finally obtain the gradient IV. THEORETICAL ANALYSES
+based on (11). The computation complexity is still O(d). For In this section, two theoretical explorations, the smoothness
+better illustration, one epoch of gradient update of EIRM is analysis and convergence analysis, are conducted to better
+detailed in Algorithm 1. understand the proposed EIRM. All proofs are offered in
+Appendix.
+C. EIRM-Based Fault Diagnosis Model
+A. Smoothness of the Vanilla Risk Function
+In developing a data-driven model for the fault diagno-
+sis task, we leverage EIRM as the objective function and First, let us leave the domain variable e aside and consider
+apply the optimization process in Algorithm 1 to train a 1-D the setting of one domain. Then, we attempt to characterize
+convolutional neural network (1-D CNN) to classify faults. different levels of “smoothness” of the vanilla risk function
+The selection of 1-D CNN as the data-driven model is due R based on the Lipschitz continuity. The definitions based
+to its popularity in fault diagnosis applications [58], [59]. on Lipschitz continuity to capture function smoothness are
+In particular, the 1-D CNN named 1-D LetNet is brought commonly used in the literature [52], [53], [54], [55]. Note
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 6 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15481
+that although the basic assumptions considered in convergence from L -LCH to L -LCG and L -LCG to L -LCR. In short,
+3 2 2 1
+analyses may be similar, the theoretical deviations of conver- L -LCR can be related to flatness, and the direction from
+1
+gences can vary significantly since different algorithms and L -LCR to L -LCH means “smoother” conditions. In addition,
+1 3
+loss functions have different gradient characteristics. In this we also refer to L -LCR, L -LCG, and L -LCH as the first,
+1 2 3
+study, the vanilla risk function R is assumed to be twice second, and third levels of “smoothness,” respectively. For
+differentiable and definitions of different smoothness levels convenience, we will drop the quotation marks. However,
+are also presented to facilitate theoretical developments. it should be minded that smoothness has a specific meaning
+Definition 1 (L -Lipschitz Continuous Risk, L -LCR): The as given by the respective definitions.
+1 1
+risk function R is L -Lipschitz continuous if
+1
+(cid:13) (cid:13)R (cid:0)θ′(cid:1) − R(θ)(cid:13) (cid:13) ≤ L 1 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) . (12) B. Smoothness of the Extended Risk Function
+The practical risk function in (10) is the approximation to
+Definition 2 (L 2 -Lipschitz Continuous Gradient, L 2 -LCG): the extended risk function R ˜ by considering (7) and ignoring
+The risk function R has L -Lipschitz continuous gradient if
+2 the domain variable e, which is given as follows:
+(cid:13) (cid:13)∇R (cid:0)θ′(cid:1) − ∇R(θ)(cid:13) (cid:13) ≤ L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) . (13) R ˜ (θ) = R(θ) + λ∥∇R(θ)∥4. (16)
+Definition 3 (L -Lipschitz Continuous Hessian, L -LCH):
+3 3 Here, we theoretically study the form of risk function in (16)
+The risk function R has L -Lipschitz continuous Hessian if
+3 rather than in (10) just for simplicity and convenience. Then,
+(cid:13) (cid:13)∇2R (cid:0)θ′(cid:1) − ∇2R(θ)(cid:13) (cid:13) ≤ L 3 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) (14) it is notable that to have the same level of smoothness,
+R ˜ demands more conditions than R since ∇R is involved.
+where a matrix norm such as ∥∇2R∥ can be induced by a
+To check this, we provide the lemma regarding the L -LCR
+vector v ∈ Rd as follows: 1
+as follows.
+(cid:13) (cid:13)∇2R (cid:13) (cid:13) = sup (cid:13) (cid:13)∇2Rv (cid:13) (cid:13) . (15) Lemma 2: If the vanilla risk function R satisfies L 1 -LCR,
+˜
+∥v∥=1 the extended risk function R will satisfy
+tio T ns h . e S re pe a c r i e fic s a o l m ly e , L im - m L e C d R iat i e mp c l o i n es se t q h u e en b c o e u s nd f e ro d m gr t a h d e ie d n e t fi a n n i d - (cid:13) (cid:13)R ˜ (cid:0)θ′(cid:1) − R ˜ (θ)(cid:13) (cid:13) ≤ L 1 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + 2λ L4 1 . (17)
+1
+˜
+L 2 -LCG implies the bounded Hessian. In addition, L 2 -LCG In addition, if R continues to satisfy L 2 -LCG, R will satisfy
+T m h e e a s n e s r l e o s c u a l l ts L c 1 a - n LC be R s , h w ow hi n le by L 3 t - h L e C c H oro m ll e a a r n ie s s l o o f ca a l le L m 2 - m L a CG as . (cid:13) (cid:13)R ˜ (cid:0)θ′(cid:1) − R ˜ (θ)(cid:13) (cid:13) ≤ L 4 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) (18)
+follows. where L = L + 4λ L3L .
+Lemma 1 [52, Lemma 2.6]: Let M : Rm → Rn be a As sho 4 wn i 1 n Lemm 1 a 2 2 , if R only satisfies L -LCR, the
+1
+differentiable function. Then, M is L-Lipschitz if and only risk difference of R ˜ can be bounded by the sum of the model
+if ∥DM(z)∥ ≤ L for ∀z ∈ Rm, where DM is the Jacobian of parameter difference and a model parameter independent term.
+M and L is the Lipschitz constant. In addition, the proof of the first statement in Appendix shows
+Corollary 1: The risk function R satisfies L 1 -LCR if and that if 2λ L4 is dropped, the inequality of (17) will not be
+only if ∥∇R(θ)∥ ≤ L 1 . Similarly, R satisfies L 2 -LCG if and always true 1 unless gradient penalties are the same for all
+only if ∥∇2R(θ)∥ ≤ L 2 . possible values of θ. Hence, by Definition 1, R ˜ does not
+Corollary 2: If the risk function R satisfies L 2 -LCG and satisfy L 1 -LCR. However, once R satisfies both L 1 -LCR and
+there exists a point θ· such that ∥∇R(θ·)∥ ≤ (L 1 /2), then R L 2 -LCG, it can guarantee that R ˜ satisfies L 1 -LCR. Hence, R ˜
+satisfies L 1 -LCR locally around the point within the radius requires a smoother R to reach the first level of smoothness.
+(L 1 /2L 2 ). Similarly, if R satisfies L 3 -LCH and there exists Similarly, to reach the second level of smoothness, R ˜
+a point θ· such that ∥∇2R(θ·)∥ ≤ (L 2 /2), then R satisfies requires that R satisfies the first, second, and third levels of
+L 2 -LCG around the point within the radius (L 2 /2L 3 ). smoothness, which can be stated as follows.
+The proof of Lemma 1 was provided in [52]. Although Lemma 3: Suppose that the vanilla risk function R satisfies
+Corollaries 1 and 2 result from Lemma 1, these two claims L -LCR and L -LCG, and then, the extended risk function R ˜
+1 2
+were not examined in [52]. To facilitate our development, the satisfies
+proofs of Corollaries 1 and 2 are offered in Appendixes A
+and B, respectively. From the first statement of Corollary 1, (cid:13) (cid:13)∇R ˜ (cid:0)θ′(cid:1) − ∇R ˜ (θ)(cid:13) (cid:13) ≤ L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + 8λ L3 1 L 2 . (19)
+we can see that L -LCR is equivalent to requiring a uniformly
+1 In addition, suppose that R continues to satisfy L -LCH, and
+3
+bounded gradient. Locally, the gradient bounded uniformly by ˜
+then, R satisfies
+a small Lipschitz constant implies that such a local area is flat.
+Therefore, L 1 -LCR is closely related to flatness. The second (cid:13) (cid:13)∇R ˜ (cid:0)θ′(cid:1) − ∇R ˜ (θ)(cid:13) (cid:13) ≤ L 5 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) (20)
+statement of Corollary 1 means that having L -LCG requires
+2 where L = L + 4λ L3L + 4λ L2L2.
+the uniformly bounded Hessian. With a bounded Hessian, 5 2 1 3 1 2
+the gradient cannot change “too fast,” which means that we Regarding the third level of smoothness, we would expect
+˜
+are more likely to bound the gradient locally. Consequently, that R may also rely on more conditions than R. However,
+L -LCR is more likely to hold in a local area. In fact, Corol- since we only assume that R is twice differentiable, it is not
+1
+lary 2 offers specific conditions, which allow the directions sufficient to discuss such a case.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 7 =====
+
+15482 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+C. Convergence Based on the Extended Risk Function flat minima. To this end, the global convergence analysis is
+significant and valuable to understand the characteristics of
+Before stating the main result, it is necessary to offer the
+the proposed risk function.
+last lemma derived from Lemma 3 as follows.
+Lemma 4: Suppose that the extended risk function R ˜ sat- In general, global convergence is challenging in practice
+since some assumed conditions may not be attainable or
+isfies the inequality in (19), and then,
+satisfied globally. For instance, if R does not satisfy L -LCH
+R ˜ (cid:0)θ′(cid:1) ≤ R ˜ (θ) + ∇R ˜ (θ)T (cid:0)θ′ − θ(cid:1) + L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) 2 or the learning rate is larger than 1/L 5 , it is not po 3 ssible
+2 to reach the global convergence under our setup as shown
++ 8λ L3 1 L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) . (21) in (25). In this case, a practical approach is to upper bound
+˜ the loss difference between the current point and the global
+In addition, if R satisfies the inequality in (20), then
+optimal point as shown in (24). As discussed in the previous
+R ˜ (cid:0)θ′(cid:1) ≤ R ˜ (θ) + ∇R ˜ (θ)T (cid:0)θ′ − θ(cid:1) + L 5 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) 2. (22) paragraph, implications of (24) and (25) could offer theoretical
+2 insights on the preference of flat minima of the proposed risk
+Now, it is ready to provide the main results on the global function. Apart from conditions assumed in this study, there
+convergence and local convergence of the GD algorithm based exist some other conditions for enabling global convergence in
+on the gradient of the extended risk function. recent literature, such as special initializations [50] and special
+Theorem 1 (Global Convergence): If the extended risk neural network models [56]. However, these studies offered
+function R ˜ has the global optimal value R ˜ (θ∗) and satisfies the little knowledge on linking global convergence with seeking
+Polyak–Lojasiewicz condition with the finite positive constant flat minima. In addition to the global convergence analysis, the
+µ, i.e., local convergence analysis is also important and usually more
+R ˜ (θ) − R ˜ (cid:0)θ∗(cid:1) ≤ 2 1 µ (cid:13) (cid:13)∇R ˜ (θ)(cid:13) (cid:13) 2 (23) p im ra p c l t y ic t a h l a . t W th il e l G th D e l b o a c s a e l d co o n n v t e h r e ge p n r c o e po a s n e a d ly r s i i s s k a f l u s n o c c ti o o n n si p st r e e n fe tl r y s
+flat minima? This question is answered by the second theorem
+and the vanilla risk function R satisfies L -LCR and L -LCG,
+1 2 in the following, which also implies such a preference for flat
+then the GD algorithm using ∇R ˜ and the learning rate 0 <
+minima.
+γ ≤ min((1/L ), (1/µ)) at iteration t + 1 gives
+2 Theorem 2 (Local Convergence): If the vanilla risk func-
+R ˜ (cid:0)θt+1(cid:1) − R ˜ (cid:0)θ∗(cid:1) ≤ (1 − γ µ)t+1(cid:2) R ˜ (cid:0)θ0(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) tion R satisfies L 2 -LCG in the considered local area
+∥θ − θ×∥ ≤ (L /2L ) with ∥∇R(θ×)∥ ≤ (L /2) and
++ 8λ γ L µ 3 1 L 4 (cid:2) 1 − (1 − γ µ)t+1(cid:3). (24) ma 1 x (cid:0) L 2 + 4λ L3L , 16λ L3L (cid:1) ≤ 1 1 (26)
+1 1 2 1 2
+In addition, if R continues to satisfies L -LCH, then with the ˜
+3 as well as the extended risk R function has the local opti-
+learning rate 0 < γ ≤ min((1/L 5 ), (1/µ)), the bound in (24) mal value R ˜ (θ×) and satisfies the local Polyak–Lojasiewicz
+can be reduced to condition with finite positive constant µ, i.e.,
+R ˜ (cid:0)θt+1(cid:1) − R ˜ (cid:0)θ∗(cid:1) ≤ (1 − γ µ)t+1(cid:2) R ˜ (cid:0)θ0(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3). (25) R ˜ (θ) − R ˜ (cid:0)θ×(cid:1) ≤ 1 (cid:13) (cid:13)∇R ˜ (θ)(cid:13) (cid:13) 2 (27)
+2µ
+Thus, the GD algorithm converges globally as t approaches
+infinity. then the GD algorithm using ∇R ˜ and the learning rate
+In Theorem 1, the given conditions, i.e., the L 1 -LCR, the 16λ L3 1 < γ ≤ min((1/L 2 ), (1/µ) + 16λ L3 1 ) at iteration
+L 2 -LCG, and the Polyak–Lojasiewicz conditions, are typical t + 1 gives
+in the convergence analysis of GD algorithm [52], [53], [54],
+[55]. In particular, the Polyak–Lojasiewicz condition can be R ˜ (cid:0)θt+1(cid:1) − R ˜ (cid:0)θ×(cid:1)
+true even if the function is nonconvex [52]. However, under ≤ (cid:0) 1 + 16λµL3 − γ µ(cid:1)t+1(cid:2) R ˜ (cid:0)θ0(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3). (28)
+the conditions of the first statement, the algorithm may not 1
+easily converge due to the existence of the gradient penalty. Thus, the GD algorithm converges locally as t approaches
+This can be seen from the second term of the upper bound. infinity.
+Interestingly, the second term is also highly associated with In Theorem 2, if we further assume that R locally satisfies
+L . As discussed previously, the flatness is related to L . L -LCR with bounded gradients, then the explicit constraints
+1 1 1
+When L is small, the region is more likely to be flat. With an on the local area will become implicit, which may widen the
+1
+appropriate λ and a small L , the algorithm can attain a tighter suitable areas. In addition, the only constraint on the local area
+1
+bound in (24). This is different from the case when returning to is now given by (26). Then, it is also observable that with the
+R by setting λ = 0, which leads to an easy convergence under increase of the penalty coefficient λ, it demands smaller L ,
+1
+the given conditions with little regard to the flatness. From which corresponds to a flatter zone. However, λ should not
+the second statement of Theorem 1, the GD algorithm based increase arbitrarily since larger λ leads to a shorter range of
+˜
+on R will have a global convergence, given that R becomes the desired learning rate. As such, there should be a tradeoff
+more smoother by satisfying L -LCH and the learning rate between flatness and convergence. Note that this tradeoff also
+3
+is constrained by L . Note that L consists of L and λ as exists in Theorem 1.
+5 5 1
+derived in (20). From these discussions, Theorem 1 can imply To summarize the theoretical analyses, we offer several
+that pursuing global convergence is closely related to seeking important take-away notes as follows.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 8 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15483
+1) The extended risk function enables the vanilla risk func-
+tion to exhibit certain smooth characteristics. Namely,
+if the GD settles at a smooth region of the extended
+risk function, this region is likely to be perceived as
+smoother in the context of the vanilla risk function. This
+characteristic stems directly from the gradient penalty,
+which requires regulating the first-order derivatives.
+2) The coefficients of upper bounds in (25) and (28) range
+between zero and one. This indicates that under the
+conditions outlined in Theorems 1 and 2, the current Fig. 2. Test rig of the linear electromechanical actuator.
+risk difference goes to zero as t approaches infinity. The
+we only introduce the essential information for task design.
+global and local convergences of the GD algorithm are
+The data were collected under three loading conditions, 20 kgf
+then obtained based on the gradient of the extended risk
+(DG task 0), 40 kgf (DG task 1), and −40 kgf (DG task
+function.
+2). Herein, DG task 0 means that data under 20 kgf are the
+3) Compared to the vanilla function, the extended risk
+DG test domain, while data under other loads are two DG
+function necessitates smoother and flatter zones for the
+training domains. The configurations for DG tasks 1 and 2 are
+GD algorithm convergence. However, it is crucial to
+structured in a similar manner.
+maintain a balance between pursuing convergence and
+The final task is to classify samples of three types of faults
+locating the desired minimum, which is controlled by
+in the DG tasks under two LN noise types. DG test domains
+the penalty coefficient λ.
+were LN free, but DG training domains were corrupted by
+4) Finally, it should be mentioned that the main purpose of
+LNs. Recall the definition of transition matrix introduced in
+the theoretical analysis is to provide a better understand-
+the preliminary. The LN corruption can be defined by the
+ing of the proposed methodology. We leave the more
+transition matrix [8]. There are three classes, i.e., c = 3.
+in-depth theoretical and experimental analyses regarding
+Regarding the symmetric noise case, it is introduced by setting
+the convergence in future studies.
+noise rate η = 0.2 for ∀ i=j T ij = 1 − η and ∀ i̸=j T ij =
+V. EXPERIMENTS η/(c − 1). Regarding asymmetric noise case, it is generated
+In this section, the proposed risk functions are bench- by setting η = 0.2 for: 1) ∀ i=j T ij = 1 − η; 2) T ij =
+marked against other methods in training data-driven models η × 0.2 for T 0,1 , T 1,2 , and T 2,0 ; and 3)T ij = η × 0.8 for
+for machine fault classifications. The classification tasks are T 0,2 , T 1,0 , and T 2,1 .
+designed so that they belong to NL-DG settings. A higher In summary, there are two noise types, symmetric and
+classification accuracy means that the method is more effective asymmetric noises, with noise rate η = 0.2. For each DG
+in identifying different fault types. Thus, the evaluation metric task, there are three fault classes. For each class, there are
+is the average accuracy over the test domains. 160 samples. For each sample, there are 1000 signal points.
+2) Task Design Based on Gearbox Dataset: The second
+A. Benchmark Method dataset contains data reflecting three health conditions of a
+The compared methods encompass a variety of risk func- gearbox: normal condition (labeled as 0), missing tooth of sun
+tions, including the ERM based on the standard CE [21], gear (labeled as 1), and missing tooth of planet gear (labeled
+the SCE [11], the normalized CE (NCE) [12], the JSD as 2). The test rig is shown in Fig. 3. For complete information
+[20], the ANL [22], the generalized label smoothing (GLS) of the data collection, please refer to [32]. Next, we provide
+[24], the asymmetric unhinged loss (AUL) [23], and the pre- only the key information necessary to illustrate the task design.
+diction clipping (Clipping) [26]. The considered methods also In this case, we employ data collected at shaft speeds of 1200,
+include the ANDMask (AMask) [29], the representation self- 1500, and 1800 r/min, to design three DG tasks, DG tasks 0,
+challenging (RSC) [13], the interdomain mix-up (Mixup) [28], 1, and 2, respectively. We follow a similar procedure to that
+the IRM [15], the IB-IRM [31], the risk distribution matching of the actuator dataset to design the final tasks. There are only
+two differences. For each class, there are 140 samples, and,
+(RDM) [60], and the causal representation of sufficiency and
+in each sample, there are 2000 points.
+necessity (CaSN) [61]. Regarding the vanilla risk function
+of EIRM, it is chosen as the standard CE risk function.
+A total of 15 methods, most proposed in recent years, serve as C. Experiment Implementation
+benchmarks. Each method is applied to train the 1-D LeNet In each fault classification task, we separately apply EIRM
+(Fig. 1) to classify faults in the experiments. and the benchmark methods to train the 1-D LeNet (shown in
+Fig. 1) based on two training domains and then test the trained
+B. Machine Fault Diagnosis Task model on one test domain.
+1) Task Design Based on Actuator Dataset: The first dataset Regarding the experimental procedure, we follow a similar
+contains three fault types of an electromechanical actuator, the principled protocol to that employed in the “DomainBed”
+backlash (labeled as 0), lack of lubrication (labeled as 1), and experiments [27]. The key principles of the DomainBed are
+spalling defect (labeled as 2). The test rig is shown in Fig. 2. as follows: 1) the hyperparameters are selected using random
+The full information of the dataset is provided in [62]. Next, search within the specified grids and 2) the process is repeated
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 9 =====
+
+15484 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+TABLE I
+FAULT CLASSIFICATION RESULTS BASED ON THE ACTUATOR AND GEARBOX DATASETS WITH SYMMETRIC LNS
+TABLE II
+FAULT CLASSIFICATION RESULTS BASED ON THE ACTUATOR AND GEARBOX DATASETS WITH ASYMMETRIC LNS
+their respective original papers, as they are not included in the
+DomainBed.
+D. Result Analysis
+The fault classification results of DG tasks with symmet-
+ric LNs are presented in Table I, while the results of the
+asymmetric counterpart are displayed in Table II. The essential
+observations from Tables I and II are as follows.
+1) All models generally perform better on the gearbox
+dataset than the actuator dataset. This likely results from
+Fig. 3. Test rig of the gearbox. the complexity of the actuator’s two motion profiles,
+the trapezoidal and the sinusoidal, as detailed in [62],
+20×, with each search averaged over three random seeds of which are more complex than the simple constant speed
+trials. We also highlight the major adaptations as follows. First, rotation of the gear [32]. Hence, it can be more difficult
+the total number of epochs for each method is selected from to diagnose the actuator faults.
+[500, 1000, . . . , 5000] instead of being fixed to 5000. Second, 2) It is challenging for a single method to consistently
+the penalty coefficient λ is 10ξ, where ξ ∼ U(−1, 5), i.e., outperform the others in the NL-DG tasks. However, the
+ξ is drawn uniformly from (−1, 5). Other hyperparameter average results show that the proposed method is more
+grids of the benchmark methods are also set to match those effective than all the benchmarks.
+in DomainBed, except for JSD [20], GLS [24], RDM [60], 3) Compared to most state-of-the-art methods, such as the
+and CaSN [61]. For these methods, the grids are taken from AUE [23] or ANL [22], EIRM demonstrates more stable
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 10 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15485
+performances on both the symmetric case (Table I) and Section V-C. Regarding the theoretical developments, future
+the asymmetric case (Table II). For instance, although studies can further explore the convergence properties with
+ANL and our method are comparable in Table I, our less or more smoothness conditions, which may lead to more
+method consistently outperforms ANL across all tasks knowledge discoveries that can enrich the understanding of
+in Table II. Thus, these experimental results suggest EIRM or innovate its current formulation.
+that EIRM can bring benefits for solving the NL-DG
+problems. APPENDIX
+A. Proof of Corollary 1
+E. Ablation Analysis By Lemma 1, M : Rm → Rn is differentiable. The i j-entry
+The CE [21] in our experiments is the ERM based on of the Jacobian DM is defined as follows:
+the standard CE loss. The IRM [15] has two terms, the CE ∂M(z )
+[DM] = i
+loss and IRM regularization, as shown in (2). Our method, ij ∂z
+j
+EIRM, also includes two terms, the CE loss and the EIRM
+for i = 1, 2, . . . , n, and j = 1, 2, . . . , m. (29)
+regularization, as shown in (10). The EIRM regularization
+is developed on top of the IRM regularization by linking it Replacing M in Lemma 1 by R gives ∥∇R(θ)∥ ≤ L ,
+1
+with flat minima optimization as explained in Section III-B. which proves the first statement. Similarly, replacing M in
+In addition, all compared methods consider the same model Lemma 1 by ∇R gives ∥∇2R(θ)∥ ≤ L , which proves the
+2
+structures and searching processes of hyperparameters. Hence, second statement.
+by comparing the results of CE [21] with those of IRM [15]
+and EIRM, we can observe the effect of adding IRM-related
+B. Proof of Corollary 2
+regularization. By comparing the results of IRM with those
+Considering the reverse triangle inequality and the Lipschitz
+of EIRM, we can observe the effect of innovating the IRM
+gradient, we have
+regularization from the perspective of flat minima optimiza-
+tion. Quantitatively, based on the average results of Table I, (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) − ∥∇R(θ)∥ ≤ (cid:13) (cid:13)∇R (cid:0)θ′(cid:1) − ∇R(θ)(cid:13) (cid:13) ≤ L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) .
+EIRM outperforms IRM [15] and CE [21] by 5.7% and
+(30)
+9.2%, respectively. Based on the average results of Table II,
+EIRM surpasses IRM [15] and CE [21] by 5.8% and 8.3%, If there exists a point θ· such that ∥∇R(θ·)∥ ≤ (L /2) (i.e.,
+1
+respectively. Hence, we can confirm that our developments a bounded gradient at a point), then we can show that the
+from CE [21] to EIRM result in improvements. Essentially, gradients within ∥θ − θ·∥ ≤ (L /2L ) are uniformly bounded
+1 2
+we attribute this effectiveness to the integration of learning by L . Namely, we have
+1
+invariance with the pursuit of flat minima, which is the core ∥∇R(θ)∥ = (cid:13) (cid:13)∇R(θ) − ∇R (cid:0)θ·(cid:1) + ∇R (cid:0)θ·(cid:1)(cid:13) (cid:13)
+concept behind the development of EIRM.
+≤ (cid:13) (cid:13)∇R(θ) − ∇R (cid:0)θ·(cid:1)(cid:13) (cid:13) + (cid:13) (cid:13)∇R (cid:0)θ·(cid:1)(cid:13) (cid:13)
+VI. CONCLUSION ≤ L 2 (cid:13) (cid:13) θ − θ·(cid:13) (cid:13) + (cid:13) (cid:13)∇R (cid:0)θ·(cid:1)(cid:13) (cid:13) ≤ L 1 . (31)
+In this article, a new risk minimization method, EIRM, was By Lemma 1 and Corollary 1, we know that R is
+proposed to develop data-driven models capable of addressing L -Lipschitz in ∥θ − θ·∥ ≤ (L /2L ). The second statement
+1 1 2
+NL-DG problems in machine fault diagnosis. Theoretical stud- can be similarly proved by considering the reverse triangle
+ies on the smoothness analysis and the convergence analysis inequality and the Lipschitz and Hessian.
+were conducted to deepen the understanding of the proposed
+EIRM. In the case studies, extensive NL-DG tasks based on
+C. Proof of Lemma 2
+actuator and gearbox datasets were employed to benchmark
+Note that ∥R ˜ (θ′) − R ˜ (θ)∥ can be expanded as follows:
+the proposed EIRM against a set of competitive methods.
+On average, the proposed EIRM was more effective in classi- (cid:13) (cid:13)R ˜ (cid:0)θ′(cid:1) − R ˜ (θ)(cid:13) (cid:13)
+fyi I n n g f d u i t f u f r e e re s n t t ud fa ie u s l , t t f y u p rt e h s er un e d x e p r lo t r h a e tio N n L s -D ca G n s b e e tti c n o g n s d . ucted in = (cid:13) (cid:13) (cid:13) R (cid:0)θ′(cid:1) + λ (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 4 − R(θ) − λ∥∇R(θ)∥4 (cid:13) (cid:13) (cid:13)
+b E o IR th M a , p b p a li s c e a d tio o n n a it n s d pr t i h n e c o i r p e l t e i s c , al ha a s sp th ec e ts p . o F te i n rs ti t a , l th to e b p e ro g p e o n s e e r d - = (cid:13) (cid:13) (cid:13) (cid:2) R (cid:0)θ′(cid:1) − R(θ)(cid:3) + λ h(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 4 − ∥∇R(θ)∥4 i(cid:13) (cid:13) (cid:13) . (32)
+alized to a wider range of problems. This study only verified Considering the triangle inequality gives
+the advantages of EIRM based on the machine fault diagnosis
+application. Future studies may apply EIRM to modeling tasks (cid:13) (cid:13)R ˜ (cid:0)θ′(cid:1) − R ˜ (θ)(cid:13) (cid:13)
+in other areas besides machine fault diagnosis, where solutions ≤ (cid:13) (cid:13)R (cid:0)θ′(cid:1) − R(θ)(cid:13) (cid:13) + λ (cid:13) (cid:13) (cid:13) (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 4 − ∥∇R(θ)∥4 (cid:13) (cid:13) (cid:13) . (33)
+for handling NL-DG in modeling are also needed. To real-
+ize a successful implementation of the ERIM in modeling, Since R is L -Lipschitz, using the triangle inequality again
+1
+extra research efforts need to be devoted into identifying the provides
+appropriate model for handling application-dependent inputs (cid:13) (cid:13)R ˜ (cid:0)θ′(cid:1) − R ˜ (θ)(cid:13) (cid:13)
+and searching for appropriate hyperparameters, following a
+procedure similar to that of the DomainBed specified in ≤ L 1 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + λ (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 4 + λ∥∇R(θ)∥4. (34)
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 11 =====
+
+15486 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+By Lemma 1 and L -Lipschitz continuity of R, we know that Considering the triangle equality twice, we obtain
+1
+(cid:13) (cid:13)R ˜ (cid:0)θ′(cid:1) − R ˜ (θ)(cid:13) (cid:13) ≤ L 1 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + 2λ L4 1 . (35) (cid:13) (cid:13)∇R ˜ (cid:0)θ′(cid:1) − ∇R ˜ (θ)(cid:13) (cid:13)
+Hence, we complete the proof of the first statement. ≤ (cid:13) (cid:13)∇R (cid:0)θ′(cid:1) − ∇R(θ)(cid:13) (cid:13) + 4λ (cid:13) (cid:13) (cid:13) (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2∇2R (cid:0)θ′(cid:1)∇R (cid:0)θ′(cid:1) (cid:13) (cid:13) (cid:13)
+Regarding the second statement, we only need to rebound + 4λ (cid:13) (cid:13)∥∇R(θ)∥2∇2R(θ)∇R(θ)(cid:13) (cid:13) . (44)
+the second term in (33) as follows:
+We know that R satisfies L -LCR, which means that
+(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 4 − ∥∇R(θ)∥4 ∥∇R(θ′)∥ ≤ L and ∥∇R(θ)∥ ≤ 1 L . It also satisfies L -LCG,
+1 1 2
+= (cid:16)(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2 − ∥∇R(θ)∥2 (cid:17) × (cid:16)(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2 + ∥∇R(θ)∥2 (cid:17) which means that ∥∇2R(θ)∥ ≤ L 2 and ∥∇R(θ′) − ∇R(θ)∥ ≤
+L ∥θ′ − θ∥. Then, considering the Cauchy–Schwarz inequal-
+= (cid:0)(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) − ∥∇R(θ)∥(cid:1) × (cid:0)(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) + ∥∇R(θ)∥(cid:1) ity 2 of vector (matrix) norm, we obtain that
+× (cid:16)(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2 + ∥∇R(θ)∥2 (cid:17) . (36) (cid:13) (cid:13)∇R ˜ (cid:0)θ′(cid:1) − ∇R ˜ (θ)(cid:13) (cid:13)
+Considering the Cauchy–Schwarz inequality, L 1 -LCR and ≤ L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + 4λ L2 1 L 2 L 1 + 4λ L2 1 L 2 L 1
+L 2 -LCG of R, and Lemma 1, we can bound (36) as follows: = L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + 8λ L3 1 L 2 . (45)
+(cid:13) (cid:13) (cid:13) (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 4 − ∥∇R(θ)∥4 (cid:13) (cid:13) (cid:13) ≤ L 2 (cid:13) (cid:13) θ′−θ(cid:13) (cid:13) (L 1 + L 1 )(cid:0) L2 1 + L2 1 (cid:1) Thus, the first statement is proved.
+To prove the second statement, we only need to rebound the
+= 4L3 1 L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) . (37) second square bracket of (43). Now, consider three vectors as
+follows:
+Considering the bounds of the first and the second terms
+on the right-hand side of (33) and the coefficient λ gives the v 1 = (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2∇2R (cid:0)θ′(cid:1)∇R (cid:0)θ′(cid:1)
+desired bound.
+− ∥∇R(θ)∥2∇2R(θ)∇R(θ) (46)
+D. Proof of Lemma 3 v 2 = (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2∇2R (cid:0)θ′(cid:1)∇R (cid:0)θ′(cid:1)
+First, we need to compute the gradient of R ˜ . Let U(θ) = − ∥∇R(θ)∥2∇2R(θ)∇R (cid:0)θ′(cid:1) (47)
+∥∇R(θ)∥4 and V(θ) = ∇R(θ). Then, we have v 3 = ∥∇R(θ)∥2∇2R(θ)∇R (cid:0)θ′(cid:1)
+∂U(θ) = ∂U(θ) × ∂V (cid:0)θ j (cid:1)(cid:12) (cid:12) (cid:12) + X ∂U(θ) × ∂V (cid:0)θ j (cid:1) . − ∥∇R(θ)∥2∇2R(θ)∇R(θ). (48)
+∂θ i ∂V (cid:0)θ j (cid:1) ∂θ i (cid:12) (cid:12) j=i j̸=i ∂V (cid:0)θ j (cid:1) ∂θ i No W te e th ca a n t v obs i e s rv th e e th q a u t an v t 1 it = y i v n 2 s + ide v 3 th a e nd se ∥ c v o 1 n ∥ d ≤ sq ∥ u v a 2 r ∥ e + br ∥ ac v k 3 ∥ et .
+1
+(38) of (43). Next, we are going to bound ∥v ∥ and ∥v ∥. We first
+2 3
+bound ∥v ∥ as follows:
+Note that U(θ) = [V(θ )2 + V(θ )2 + · · · + V(θ )2]2. Hence, 2
+1 2 d
+we obtain that ∥v ∥
+2
+∂U(θ) = 2 " X d V(θ )2 # 2V (cid:0)θ (cid:1) = 4∥V(θ)∥2V (cid:0)θ (cid:1). (39) = (cid:13) (cid:13) (cid:13)L2 "(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2 ∇2R (cid:0)θ′(cid:1) − ∥∇R(θ)∥2 ∇2R(θ) # ∇R (cid:0)θ′(cid:1) (cid:13) (cid:13) (cid:13)
+∂V (cid:0)θ
+j
+(cid:1)
+k=1
+k j j (cid:13)
+(cid:13)
+1 L2
+1
+L2
+1
+(cid:13)
+(cid:13)
+Whe ∂ n V (cid:0) j θ = (cid:1) i, w ∂ e (cid:0)∇ ca R n (cid:0) c θ al (cid:1) c (cid:1) ulate ∂( th R e ( f θ o ) l ) lowing: ≤ L2 1 (cid:13) (cid:13) (cid:13) (cid:13) (cid:13) (cid:13) (cid:13)∇R L (cid:0) 2 1 θ′(cid:1)(cid:13) (cid:13) 2 ∇2R (cid:0)θ′(cid:1) − ∥∇R L ( 2 1 θ)∥2 ∇2R(θ) (cid:13) (cid:13) (cid:13) (cid:13) (cid:13) (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13)
+∂θ i j = ∂θ j j = ∂θ j ∂θ j = (cid:2)∇2R(θ)(cid:3) jj . (40) ≤ L2 1 (cid:13) (cid:13)∇2R (cid:0)θ′(cid:1) − ∇2R(θ)(cid:13) (cid:13) (cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) . (49)
+When j ̸= i, we can compute the following: In (49), the first inequality is given by the Cauchy–Schwarz
+inequality. Regarding the second inequality, note that
+∂V (cid:0)θ j (cid:1) = ∂(cid:0)∇R (cid:0)θ j (cid:1)(cid:1) = ∂(R(θ)) = (cid:2)∇2R(θ)(cid:3) . (41) ∥∇R(θ′)∥ ≤ L 1 and ∥∇R(θ)∥ ≤ L 1 by Lemma 1 and
+∂θ i ∂θ i ∂θ j ∂θ i ji L 1 -Lipschitz continuity of R. Given that L 3 -LCH is satisfied,
+we have that ∥v ∥ ≤ L3L ∥θ′ − θ∥. Similarly, ∥v ∥ can be
+Putting all together from (38) to (41), we can obtain the 2 1 3 3
+gradient of R ˜ as follows: bounded as follows:
+∇R ˜ (θ) = ∇R(θ) + 4λ∥∇R(θ)∥2∇2R(θ)∇R(θ). (42) ∥v 3 ∥ = (cid:13) (cid:13)∥∇R(θ)∥2∇2R(θ)(cid:2)∇R (cid:0)θ′(cid:1) − ∇R(θ)(cid:3)(cid:13) (cid:13)
+≤ ∥∇R(θ)∥2(cid:13) (cid:13)∇2R(θ)(cid:13) (cid:13) (cid:13) (cid:13)∇R (cid:0)θ′(cid:1) − ∇R(θ)(cid:13) (cid:13)
+∥∇ N R ˜ e ( x θ t ′ , ) w − e ∇ a R r ˜ e (θ g ) o ∥ in c g an to be pr e o x v p e an th d e ed fir a s s t f s o ta ll t o e w m s e : nt. Note that ≤ L2 1 L2 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) (50)
+where the first inequality is based on the Cauchy–Schwarz
+(cid:13) (cid:13)∇R ˜ (cid:0)θ′(cid:1) − ∇R ˜ (θ)(cid:13) (cid:13) inequality and the second inequality is based on L -LCR
+= (cid:13) (cid:13) (cid:2)∇R (cid:0)θ′(cid:1) − ∇R(θ)(cid:3) and L -LCG of R and Lemma 1. Hence, ∥v 1 ∥ ≤
+2 1
++ 4λ h(cid:13) (cid:13)∇R (cid:0)θ′(cid:1)(cid:13) (cid:13) 2∇2R (cid:0)θ′(cid:1)∇R (cid:0)θ′(cid:1) (L3 1 L 3 + L2 1 L2 2 )∥θ′ − θ∥. Considering bounds of the first and
+the second brackets of (43) and the coefficient 4λ gives the
+− ∥∇R(θ)∥2∇2R(θ)∇R(θ)(cid:3)(cid:13) (cid:13) . (43) desired bound.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 12 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15487
+E. Proof of Lemma 4 Using (57), (58), and ∥∇R ˜ (θt)∥ ≤ L by Lemmas 1 and 2,
+4
+Let W(z) = R ˜ (θ + z(θ′ − θ)) for z ∈ [0, 1]. Note that z is we obtain
+a scalar, while θ + z(θ′ − θ) is a vector. Then, we have R ˜ (cid:0)θt+1(cid:1) ≤ R ˜ (cid:0)θt(cid:1) − γ µ(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) + 8λ L3L . (59)
+1 4
+W(z)| z=1 − W(z)| z=0 = R ˜ (cid:0)θ′(cid:1) − R ˜ (θ) (51) Minus both sides of (59) by R ˜ (θ∗), which provides
+∇W(z) = ∇R ˜ (cid:0)θ + z (cid:0)θ′ − θ(cid:1)(cid:1)T (cid:0)θ′ − θ(cid:1). (52) R ˜ (cid:0)θt+1(cid:1) − R ˜ (cid:0)θ∗(cid:1)
+Considering the fundamental theorem of calculus, we obtain ≤ R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1) − γ µ(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) + 8λ L3L
+1 4
+R ˜ (cid:0)θ′(cid:1) = R ˜ (θ) + R ˜ (cid:0)θ′(cid:1) − R ˜ (θ) = (1 − γ µ)(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) + 8λ L3L . (60)
+1 4
+Z 1
+= R ˜ (θ) + ∇R ˜ (cid:0)θ + z (cid:0)θ′ − θ(cid:1)(cid:1)T (cid:0)θ′ − θ(cid:1) dz Next, we observe the sequence of inequalities starting from
+t = 0 as follows:
+z=1
+= R ˜ (θ) + ∇R ˜ (θ)T (cid:0)θ′ − θ(cid:1) R ˜ (cid:0)θ1(cid:1) − R ˜ (cid:0)θ∗(cid:1) ≤ (1 − γ µ)(cid:2) R ˜ (cid:0)θ0(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) + 8λ L3L
+1 4
+Z 1
++ (cid:2)∇R ˜ (cid:0)θ + z (cid:0)θ′ − θ(cid:1)(cid:1) − ∇R ˜ (θ)(cid:3)T (cid:0)θ′ − θ(cid:1) dz. (61)
+z=0 R ˜ (cid:0)θ2(cid:1) − R ˜ (cid:0)θ∗(cid:1) ≤ (1 − γ µ)(cid:2) R ˜ (cid:0)θ1(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) + 8λ L3L
+1 4
+(53)
+(62)
+Using the Cauchy–Schwarz inequality, the integer can be .
+.
+.
+bounded as follows:
+Z 1 R ˜ (cid:0)θt+1(cid:1) − R ˜ (cid:0)θ∗(cid:1) ≤ (1 − γ µ)(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) + 8λ L3L .
+(cid:2)∇R ˜ (cid:0)θ + z (cid:0)θ′ − θ(cid:1)(cid:1) − ∇R ˜ (θ)(cid:3)T (cid:0)θ′ − θ(cid:1) dz 1 4
+(63)
+z=0
+Z 1
+≤ (cid:13) (cid:13)∇R ˜ (cid:0)θ + z (cid:0)θ′ − θ(cid:1)(cid:1) − ∇R ˜ (θ)(cid:13) (cid:13) (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13)dz Considering the equation above all together completes the
+z=0 first statement. Regarding the second statement, it can be
+≤ Z 1 (cid:0) L 2 z (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) + 8λ L3 1 L 2 (cid:1)(cid:13) (cid:13) θ′ − θ(cid:13) (cid:13)dz s te im rm il s ar r l e y la p ti r n o g ve t d o 8 b λ y L th 3 e L s ∥ a θ m t+ e 1 r − ea θ so t∥ n . ing without considering
+z=0 1 2
+Z 1 Z 1
+= L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) 2 zdz + 8λ L3 1 L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) dz G. Proof of Theorem 2
+z=0 z=0
+= L 2 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) 2 + 8λ L3 1 L 2 (cid:13) (cid:13) θ′ − θ(cid:13) (cid:13) (54) are S a in i c s e ∥θ ∥∇ − R θ ( × θ ∥ ×) ≤ ∥ ( ≤ L 1 / ( 2 L L 1 2 / ) 2 , ) w a e nd kno th w e f c ro o m nsid C e o r r e o d lla l r o y ca 2 l
+that ∥∇R(θ)∥ ≤ L for all θ within the area, which
+where the second inequality results from (19) of Lemma 3. 1
+means that R now satisfies L -LCR. In addition, R satisfies
+Putting (53) and (54) together completes the first statement of 1
+L -LCG, meaning that ∥∇2R(θ)∥ ≤ L by Corollary 1.
+Lemma 4. The second statement can be similarly proved. 2 2
+We then manipulate the gradient of R ˜ in (42) as follows:
+F. Proof of Theorem 1 (cid:13) (cid:13)∇R ˜ (θ)(cid:13) (cid:13) = (cid:13) (cid:13)∇R(θ) + 4λ∥∇R(θ)∥2∇2R(θ)∇R(θ)(cid:13) (cid:13)
+To prove the first statement, we rewrite (21) as follows: ≤ ∥∇R(θ)∥ + 4λ∥∇R(θ)∥2(cid:13) (cid:13)∇2R(θ)(cid:13) (cid:13)∥∇R(θ)∥
+R ˜ (cid:0)θt+1(cid:1) ≤ R ˜ (cid:0)θt(cid:1) + ∇R ˜ (cid:0)θt(cid:1)T (cid:0)θt+1 − θt(cid:1) + L 2 (cid:13) (cid:13) θt+1 − θt(cid:13) (cid:13) 2 = L 1 + 4λ L3 1 L 2 ≤ 1 (64)
+2
++ 8λ L3 1 L 2 (cid:13) (cid:13) θt+1 − θt(cid:13) (cid:13) (55) w Ca h u e c re hy th – e Sc fi h rs w t a in rz eq in u e a q li u ty al i i s ty b a a n se d d th o e n s th e e co tr n i d an i g n l e e qu in a e li q t u y a i l s it g y i a v n en d
+where θt+1 = θt − γ ∇R ˜ (θt) is one update step with the by (26). Then, we readily have that ∥∇R ˜ (θ)∥2 ≤ ∥∇R ˜ (θ)∥ ≤
+learning rate γ . Plugging the update into (55) yields 1. Given the local Polyak–Lojasiewicz condition, we obtain
+R ˜ (cid:0)θt+1(cid:1) ≤ R ˜ (cid:0)θt(cid:1) − γ (cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) 2 + L 2 2 γ 2(cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) 2 R ˜ (θ) − R ˜ (cid:0)θ×(cid:1) ≤ 2 1 µ (cid:13) (cid:13)∇R ˜ (θ)(cid:13) (cid:13) 2 ≤ 2 1 µ (cid:13) (cid:13)∇R ˜ (θ)(cid:13) (cid:13) . (65)
++ 8λ L3 1 L 2 γ (cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) Since R satisfies L 1 -LCR and L 2 -LCG in the area, we can
+γ
+≤ R ˜ (cid:0)θt(cid:1) − (2 − L 2 γ )(cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) 2 employ inequality given by (21) of Lemma 4, which allows the
+2 same arguments from (55) to (57) in the proof of Theorem 1
++ 8λ L3 1 L 2 γ (cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) . (56) [replacing (1/µ) with (1/µ) + 16λ L3 1 does not change the
+simplification of (56)]. Hence, it also has the same inequality
+Simplifying (56) by 0 < γ ≤ min((1/L ), (1/µ)) ≤ (1/L )
+2 2 as (57). Next, we apply the inequalities given in (65) and
+gives
+obtain the following:
+γ
+R ˜ (cid:0)θt+1(cid:1) ≤ R ˜ (cid:0)θt(cid:1) − 2 (cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) 2 + 8λ L3 1 (cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) . (57) R ˜ (cid:0)θt+1(cid:1) ≤ R ˜ (cid:0)θt(cid:1) − γ µ(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3)
+Then, we can apply the Polyak–Lojasiewicz condition as + 16λµL3(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3)
+1
+follows: = R ˜ (cid:0)θt(cid:1) + (cid:0) 16λµL3 − γ µ(cid:1)(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3).
+1
+2µ(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) ≤ (cid:13) (cid:13)∇R ˜ (cid:0)θt(cid:1)(cid:13) (cid:13) 2. (58) (66)
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 13 =====
+
+15488 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 36, NO. 8, AUGUST 2025
+Minus both sides of (66) by R ˜ (θ∗) and we have [19] Z. Zhang and M. Sabuncu, “Generalized cross entropy loss for training
+deep neural networks with noisy labels,” in Proc. Adv. Neural Inf.
+R ˜ (cid:0)θt+1(cid:1) − R ˜ (cid:0)θ∗(cid:1) Process. Syst., vol. 31, 2018, pp. 1–11.
+≤ R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1) + (cid:0) 16λµL3
+1
+− γ µ(cid:1)(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3) [20] E
+lo
+.
+s
+E
+s
+n
+f
+g
+o
+l
+r
+es
+le
+s
+a
+o
+r
+n
+n
+a
+in
+n
+g
+d H
+w
+.
+it
+A
+h
+z
+n
+iz
+o
+p
+is
+o
+y
+ur
+l
+,
+a
+“
+b
+G
+el
+e
+s
+n
+,”
+er
+i
+a
+n
+li
+P
+ze
+r
+d
+oc
+J
+.
+en
+A
+s
+d
+e
+v
+n
+.
+–
+N
+S
+e
+h
+u
+a
+r
+n
+a
+n
+l
+o
+I
+n
+n
+d
+f.
+iv
+P
+e
+r
+r
+o
+g
+c
+e
+e
+n
+s
+c
+s
+e
+.
+= (cid:0) 1 + 16λµL3 − γ µ(cid:1)(cid:2) R ˜ (cid:0)θt(cid:1) − R ˜ (cid:0)θ∗(cid:1)(cid:3). (67) Syst., Jan. 2021, pp. 30284–30297.
+1 [21] L. Feng, S. Shu, Z. Lin, F. Lv, L. Li, and B. An, “Can cross entropy
+loss be robust to label noise?” in Proc. 29th Int. Joint Conf. Artif. Intell.,
+Considering recursively from t to 0 on the right-hand side
+Yokohama, Japan, Jul. 2020, pp. 2206–2212.
+of (67), we complete the proof. [22] X. Ye, X. Li, S. Dai, T. Liu, Y. Sun, and W. Tong, “Active negative
+loss functions for learning with noisy labels,” in Proc. Adv. Neural Inf.
+Process. Syst., Dec. 2023, pp. 6917–6940.
+REFERENCES
+[23] X. Zhou, X. Liu, J. Jiang, X. Gao, and X. Ji, “Asymmetric loss functions
+for learning with noisy labels,” in Proc. 38th Int. Conf. Mach. Learn.,
+[1] X. Pu and C. Li, “Probabilistic information-theoretic discriminant analy-
+Jul. 2021, pp. 12846–12856.
+sis for industrial label-noise fault diagnosis,” IEEE Trans. Ind. Informat.,
+[24] J. Wei, H. Liu, T. Liu, G. Niu, M. Sugiyama, and Y. Liu, “To smooth
+vol. 17, no. 4, pp. 2664–2674, Apr. 2021.
+or not? When label smoothing meets noisy labels,” in Proc. 39th Int.
+[2] Y. Feng, J. Chen, S. He, T. Pan, and Z. Zhou, “Globally localized
+Conf. Mach. Learn., Jan. 2021, pp. 23589–23614.
+multisource domain adaptation for cross-domain fault diagnosis with
+[25] J. Wei and Y. Liu, “When optimizing f-divergence is robust with label
+category shift,” IEEE Trans. Neural Netw. Learn. Syst., vol. 34, no. 6,
+noise,” presented at the Int. Conf. Learn. Represent., Feb. 2022. [Online].
+pp. 3082–3096, Jun. 2023.
+Available: https://openreview.net/forum?id=WesiCoRVQ15
+[3] K. Zhang, B. Tang, L. Deng, Q. Tan, and H. Yu, “A fault diagnosis
+[26] H. Wei et al., “Mitigating memorization of noisy labels by clipping the
+method for wind turbines gearbox based on adaptive loss weighted
+model prediction,” in Proc. 40th Int. Conf. Mach. Learn., Jul. 2022,
+meta-ResNet under noisy labels,” Mech. Syst. Signal Process., vol. 161,
+pp. 36868–36886.
+Dec. 2021, Art. no. 107963.
+[27] I. Gulrajani and D. Lopez-Paz, “In search of lost domain generalization,”
+[4] C. Cheng, X. Liu, B. Zhou, and Y. Yuan, “Intelligent fault diagnosis
+presented at the Int. Conf. Learn. Represent., Jan. 2023. [Online].
+with noisy labels via semi-supervised learning on industrial time series,”
+Available: https://openreview.net/forum?id=lQdXeXDoWtI
+IEEE Trans. Ind. Informat., vol. 19, no. 6, pp. 7724–7732, Jun. 2023,
+doi: 10.1109/TII.2022.3229130. [28] S. Yan, H. Song, N. Li, L. Zou, and L. Ren, “Improve unsupervised
+[5] X. Pu and C. Li, “Meta-self-training based on teacher–student network domain adaptation with mixup training,” 2020, arXiv:2001.00677.
+for industrial label-noise fault diagnosis,” IEEE Trans. Instrum. Meas., [29] G. Parascandolo, A. Neitz, A. Orvieto, L. Gresele, and B. Schölkopf,
+vol. 72, pp. 1–11, 2023, doi: 10.1109/TIM.2022.3232654. “Learning explanations that are hard to vary,” presented at the
+[6] R. Li, J. Wu, Y. Li, and Y. Cheng, “PeriodNet: Noise-robust fault Int. Conf. Learn. Represent., Feb. 2022. [Online]. Available:
+diagnosis method under varying speed conditions,” IEEE Trans. Neural https://openreview.net/forum?id=hb1sDDSLbV
+Netw. Learn. Syst., vol. 35, no. 10, pp. 14045–14059, Oct. 2024, doi: [30] J. Li, Y. Wang, Y. Zi, H. Zhang, and Z. Wan, “Causal disentanglement:
+10.1109/TNNLS.2023.3274290. A generalized bearing fault diagnostic framework in continuous degra-
+[7] Z. Shi, J. Chen, Y. Zi, and Z. Chen, “DecouplingNet: A stable dation mode,” IEEE Trans. Neural Netw. Learn. Syst., vol. 34, no. 9,
+knowledge distillation decoupling net for fault detection of rotating pp. 6250–6262, Sep. 2023.
+machines under varying speeds,” IEEE Trans. Neural Netw. Learn. Syst., [31] K. Ahuja et al., “Invariance principle meets information bottleneck for
+vol. 35, no. 8, pp. 11276–11290, Aug. 2024, doi: 10.1109/TNNLS.2023. out-of-distribution generalization,” in Proc. Adv. Neural Inf. Process.
+3258748. Syst., vol. 34, Jan. 2021, pp. 3438–3450.
+[8] H. Song, M. Kim, D. Park, Y. Shin, and J.-G. Lee, “Learning from [32] Z. Mo, Z. Zhang, Q. Miao, and K.-L. Tsui, “Sparsity-constrained
+noisy labels with deep neural networks: A survey,” IEEE Trans. Neu- invariant risk minimization for domain generalization with application
+ral Netw. Learn. Syst., vol. 34, no. 11, pp. 8135–8153, 2023, doi: to machinery fault diagnosis modeling,” IEEE Trans. Cybern., vol. 54,
+10.1109/TNNLS.2022.3152527. no. 3, pp. 1547–1559, Mar. 2024, doi: 10.1109/TCYB.2022.3223783.
+[9] J. Wang et al., “Generalizing to unseen domains: A survey on [33] K. Ahuja, K. Shanmugam, K. R. Varshney, and A. Dhurand-
+domain generalization,” IEEE Trans. Knowl. Data Eng., vol. 35, no. 8, har, “Invariant risk minimization games,” in Proc. 37th Int. Conf.
+pp. 8052–8072, Aug. 2023, doi: 10.1109/TKDE.2022.3178128. Mach. Learn., vol. 1, Jul. 2020, pp. 145–155. [Online]. Available:
+[10] A. Ghosh, H. Kumar, and P. S. Sastry, “Robust loss functions under https://proceedings.mlr.press/v119/ahuja20a.html
+label noise for deep neural networks,” in Proc. AAAI Conf. Artif. Intell., [34] C. Lu, Y. Wu, J. M. Hernández-Lobato, and B. Schölkopf, “Invariant
+Feb. 2017, vol. 31, no. 1, pp. 1919–1925. causal representation learning for out-of-distribution generalization,”
+[11] Y. Wang, X. Ma, Z. Chen, Y. Luo, J. Yi, and J. Bailey, “Symmetric presented at the Int. Conf. Learn. Represent., Jan. 2022. [Online].
+cross entropy for robust learning with noisy labels,” in Proc. IEEE/CVF Available: https://openreview.net/forum?id=-e4EXDWXnSn
+Int. Conf. Comput. Vis. (ICCV), Oct. 2019, pp. 322–330. [35] Y. Lin, H. Dong, H. Wang, and T. Zhang, “Bayesian invariant risk
+[12] X. Ma, H. Huang, Y. Wang, S. Romano, S. M. Erfani, and minimization,” presented at the Proc. IEEE/CVF Conf. Comput. Vis.
+J. Bailey, “Normalized loss functions for deep learning with Pattern Recognit. (CVPR), Jun. 2022.
+noisy labels,” in Proc. 37th Int. Conf. Mach. Learn., Jan. 2020, [36] J.-H. Bae, I. Choi, and M. Lee, “Meta-learned invariant risk minimiza-
+pp. 6543–6553. tion,” 2021, arXiv:2103.12947.
+[13] Z. Huang, H. Wang, E. P. Xing, and D. Huang, “Self-challenging [37] X. Zhou, Y. Lin, W. Zhang, and T. Zhang, “Sparse invariant risk
+improves cross-domain generalization,” in Computer Vision—ECCV minimization,” in Proc. 39th Int. Conf. Mach. Learn., Jun. 2022,
+2020. Cham, Switzerland: Springer, 2020, pp. 124–140. pp. 27222–27244.
+[14] B. Schölkopf et al., “Toward causal representation learning,” Proc. IEEE, [38] P. Venkateswaran, V. Muthusamy, V. Isahagian, and
+vol. 109, no. 5, pp. 612–634, May 2021. N. Venkatasubramanian, “Environment agnostic invariant risk
+[15] M. Arjovsky, L. Bottou, I. Gulrajani, and D. Lopez-Paz, “Invariant risk minimization for classification of sequential datasets,” in Proc.
+minimization,” 2019, arXiv:1907.02893. 27th ACM SIGKDD Conf. Knowl. Discovery Data Mining, New York,
+[16] X.-J. Gui, W. Wang, and Z.-H. Tian, “Towards understanding deep NY, USA, Aug. 2021, pp. 1615–1624.
+learning from noisy labels with small-loss criterion,” in Proc. 30th [39] P. Zhou, J. Feng, C. Ma, C. Xiong, S. C. H. Hoi, and E. Weinan,
+Int. Joint Conf. Artif. Intell., Montreal, QC, Canada, Aug. 2021, “Towards theoretically understanding why SGD generalizes better than
+pp. 2469–2475. Adam in deep learning,” in Proc. Adv. Neural Inf. Process. Syst.,
+[17] P. Chen, G. Chen, J. Ye, J. Zhao, and P.-A. Heng, “Noise against noise: Jan. 2020, pp. 21285–21296.
+Stochastic label noise helps combat inherent label noise,” presented [40] J. Chen, Z. Guo, H. Li, and C. L. P. Chen, “Regularizing scale-adaptive
+at the Int. Conf. Learn. Represent., Feb. 2022. [Online]. Available: central moment sharpness for neural networks,” IEEE Trans. Neural
+https://openreview.net/forum?id=80FMcTSZ6J0 Netw. Learn. Syst., vol. 35, no. 5, pp. 6452–6466, May 2024.
+[18] J. Cha et al., “SWAD: Domain generalization by seeking flat minima,” [41] P. Izmailov, D. Podoprikhin, T. Garipov, D. Vetrov, and A. G. Wilson,
+presented at the Adv. Neural Inf. Process. Syst., Nov. 2021. [Online]. “Averaging weights leads to wider optima and better generalization,”
+Available: https://openreview.net/forum?id=zkHlu_3sJYU 2018, arXiv:1803.05407.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 14 =====
+
+MO et al.: EXTENDED IRM FOR MACHINE FAULT DIAGNOSIS WITH LABEL NOISE AND DATA SHIFT 15489
+[42] Y. Zhao, H. Zhang, and X. Hu, “Penalizing gradient norm for efficiently Zhenling Mo received the B.Eng. degree from
+improving generalization in deep learning,” in Proc. 39th Int. Conf. the School of Mechanical Science and Engineering,
+Mach. Learn., Jan. 2022, pp. 26982–26992. Huazhong University of Science and Technology,
+[43] P. Foret, A. Kleiner, H. Mobahi, and B. Neyshabur, “Sharpness- Wuhan, Hubei, China, in 2017, the M.S. degree from
+aware minimization for efficiently improving generalization,” 2020, the School of Aeronautics and Astronautics, Sichuan
+arXiv:2010.01412. University, Chengdu, Sichuan, China, in 2020, and
+[44] A. Ramé, M. Kirchmeyer, T. Rahier, A. Rakotomamonjy, P. Gallinari, the Ph.D. degree from the School of Data Science,
+and M. Cord, “Diverse weight averaging for out-of-distribution gener- City University of Hong Kong, Hong Kong, SAR,
+alization,” 2022, arXiv:2205.09739. China, in 2024.
+[45] D. Arpit, H. Wang, Y. Zhou, and C. Xiong, “Ensemble of aver- He is currently a Post-Doctoral Researcher with
+ages: Improving model selection and boosting performance in domain the Department of Data Science, College of Com-
+generalization,” in Proc. Adv. Neural Inf. Process. Syst., Jan. 2021, puting, City University of Hong Kong. His current research interests include
+pp. 8265–8277. causal machine learning, intelligent model generalization, mechanical signal
+[46] X. Zhang, R. Xu, H. Yu, Y. Dong, P. Tian, and P. Cui, “Flatness-aware processing, and fault diagnosis and prognosis.
+minimization for domain generalization,” in Proc. IEEE/CVF Int. Conf.
+Comput. Vis. (ICCV), Oct. 2023, pp. 5166–5179.
+[47] P. Wang, Z. Zhang, Z. Lei, and L. Zhang, “Sharpness-aware gradient Zijun Zhang (Senior Member, IEEE) received the
+matching for domain generalization,” 2023, arXiv:2303.10353. B.Eng. degree in systems engineering and engineer-
+ing management from The Chinese University of
+[48] S. Shin, H. Bae, B. Na, Y.-Y. Kim, and I.-C. Moon, “Unknown
+Hong Kong, Hong Kong, SAR, China, in 2008, and
+domain inconsistency minimization for domain generalization,” 2024,
+arXiv:2403.07329. the M.S. and Ph.D. degrees in industrial engineering
+from The University of Iowa, Iowa City, IA, USA,
+[49] H. Wei, L. Tao, R. Xie, and B. An, “Open-set label noise can improve
+robustness against inherent label noise,” in Proc. Adv. Neural Inf. in 2009 and 2012, respectively.
+Process. Syst. Red Hook, NY, USA: Curran Associates, Jan. 2021, Currently, he is a Professor and the Head of the
+Department of Data Science, College of Computing,
+pp. 7978–7992.
+City University of Hong Kong, Hong Kong. His
+[50] L. Chizat and F. Bach, “On the global convergence of gradient descent
+research interests include machine learning and com-
+for over-parameterized models using optimal transport,” in Proc. Adv.
+putational intelligence with applications in renewable energy, facility energy
+Neural Inf. Process. Syst. Red Hook, NY, USA: Curran Associates,
+management, and intelligent transportation domains.
+Dec. 2018, pp. 1–11. [Online]. Available: https://proceedings.
+neurips.cc/paper_files/paper/2018/hash/a1afc58c6ca9540d057299ec Dr. Zhang serves as an Associate Editor for IEEE TRANSACTIONS ON
+3016d726-Abstract.html
+SUSTAINABLE ENERGY, IEEE POWER ENGINEERING LETTERS, Journal of
+Intelligent Manufacturing, and INFORMS Journal on Data Science.
+[51] C. Jin, L. T. Liu, R. Ge, and M. I. Jordan, “On the local
+minima of the empirical risk,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 31. Red Hook, NY, USA: Curran Associates,
+Qiang Miao (Senior Member, IEEE) received the
+Jan. 2018, pp. 4896–4905. [Online]. Available: https://proceedings.
+B.E. and M.S. degrees from Beihang University,
+neurips.cc/pape_files/paper/2018/hash/da4902cb0bc38210839714ebdc
+Beijing, China, in 1998 and 2001, respectively, and
+f0efc3-Abstract.html
+the Ph.D. degree from the University of Toronto,
+[52] G. Garrigos and R. M. Gower, “Handbook of convergence theorems for
+Toronto, ON, Canada, in 2005.
+(stochastic) gradient methods,” 2023, arXiv:2301.11235.
+He is a Professor with the College of Electrical
+[53] H. Karimi, J. Nutini, and M. Schmidt, “Linear convergence of gradient
+Engineering, Sichuan University, Chengdu, China.
+and proximal-gradient methods under the Polyak–Łojasiewicz condi-
+He is also the Director of Sichuan Province Interna-
+tion,” 2016, arXiv:1608.04636.
+tional Science and Technology Cooperation Base for
+[54] M. Andriushchenko and N. Flammarion, “Towards understanding
+Aerospace Information and Intelligent Equipment,
+sharpness-aware minimization,” in Proc. 39th Int. Conf. Mach. Learn.,
+Chengdu. His research interests include reliability,
+Jun. 2022, pp. 639–668.
+fault diagnosis, and health assessment.
+[55] Z. Charles and D. Papailiopoulos, “Stability and generalization of
+Dr. Miao has been a Senior Member of the IEEE Reliability Society
+learning algorithms that converge to global optima,” in Proc. 35th Int.
+since 2012. He served as an IEEE RS AdCom Member from 2019 to
+Conf. Mach. Learn., Jul. 2017, pp. 745–754.
+2021 and the IEEE RS Vice President from 2020 to 2021. He is the
+[56] S. S. Du, J. D. Lee, H. Li, L. Wang, and X. Zhai, “Gradient descent Associate Editor-in-Chief of IEEE TRANSACTIONS ON INSTRUMENTATION
+finds global minima of deep neural networks,” in Proc. 36th Int. Conf. AND MEASUREMENT and an Associate Editor of IEEE TRANSACTIONS ON
+Mach. Learn., May 2019, pp. 1675–1685. RELIABILITY. He serves as an Editorial Board Member for Chinese Journal
+[57] A. J. Arnulf Jentzen and A. R. Adrian Riekert, “On the exis- of Aeronautics.
+tence of global minima and convergence analyses for gradient
+descent methods in the training of deep neural networks,” J. Mach.
+Learn., vol. 1, no. 2, pp. 141–246, Jan. 2022, doi: 10.4208/jml. Kwok-Leung Tsui received the Ph.D. degree
+220114a. in statistics from the University of Wisconsin–
+[58] S. Li, T. Li, C. Sun, X. Chen, and R. Yan, “WPConvNet: An interpretable Madison, Madison, WI, USA, in 1986.
+wavelet packet kernel-constrained convolutional network for noise- He is currently a Professor with the Department of
+robust fault diagnosis,” IEEE Trans. Neural Netw. Learn. Syst., vol. Manufacturing, Systems, and Industrial Engineering,
+35, no. 10, pp. 14974–14988, Oct. 2024, doi: 10.1109/TNNLS.2023. The University of Texas at Arlington, Arlington,
+3282599. TX, USA. His current research interests include data
+[59] Z. Mo, Z. Zhang, and K.-L. Tsui, “The variational kernel-based science and data analytics, surveillance in healthcare
+1-D convolutional neural network for machinery fault diagno- and public health, personalized health monitoring,
+sis,” IEEE Trans. Instrum. Meas., vol. 70, pp. 1–10, 2021, doi: prognostics and systems health management, cali-
+10.1109/TIM.2021.3105252. bration and validation of computer models, process
+[60] T. Nguyen, K. Do, B. Duong, and T. Nguyen, “Domain generalization control and monitoring, and robust design and Taguchi methods.
+via risk distribution matching,” in Proc. IEEE/CVF Winter Conf. Appl. Dr. Tsui was elected as a Council Member of the International Statisti-
+Comput. Vis., Jan. 2024, pp. 2790–2799. cal Institute and U.S. Representative of the ISO Technical Committee on
+[61] M. Yang et al., “Invariant learning via probability of sufficient and Statistical Methods. He is a fellow of American Statistical Association,
+necessary causes,” in Proc. Adv. Neural Inf. Process. Syst., vol. 36, American Society for Quality, the International Society of Engineering Asset
+Dec. 2023, pp. 79832–79857. Management, and Hong Kong Institution of Engineers. He was a recipient
+[62] C. Ruiz-Carcel and A. Starr, “Data-based detection and diagnosis of of the National Science Foundation Young Investigator Award. He was the
+faults in linear actuators,” IEEE Trans. Instrum. Meas., vol. 67, no. 9, Chair of the INFORMS Section on Quality, Statistics, and Reliability, and the
+pp. 2035–2047, Sep. 2018. Founding Chair of the INFORMS Section on Data Mining.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:04:47 UTC from IEEE Xplore. Restrictions apply.

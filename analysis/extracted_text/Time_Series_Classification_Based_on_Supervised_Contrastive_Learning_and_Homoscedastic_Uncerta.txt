@@ -1,0 +1,1025 @@
+
+
+===== PAGE 1 =====
+
+414 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+Time Series Classification Based on
+Supervised Contrastive Learning
+and Homoscedastic Uncertainty
+Tao Zhang , Ke Li , Member, IEEE, and Shaofan Wang
+Abstract—In recent years, contrastive learning (CL) frame- depend on manually crafted features [7], [8], requiring special-
+works have been widely applied to multivariate time series ized knowledge for feature extraction. However, this reliance
+classification (MTSC) tasks. However, existing methods lack task- leads to performance differences due to varying feature extrac-
+specific guidance, leading to limitations in fully capturing the
+tion methods and their limited ability to capture deep-level
+complex dynamics and invariant representations in time series
+information [9]. Modern MTSC methods increasingly utilize
+data. Motivated by the auxiliary tasks in multitask learning
+(MTL) and to fully utilize the rich frequency-domain information deep learning architectures [10], [11], [12], [13], [14], [15].
+of time series data, we propose a novel time series classification These models automatically extract features from raw data
+framework, uncertainty-based time–frequency supervised CL (U- through neural networks, enabling the discovery of complex
+TFSCL). This framework uses SCL in the time and frequency
+patterns. However, the majority of current MTSC methods that
+domains and time–frequency consistency as auxiliary tasks to
+use only instance-level labels and rely on the cross-entropy
+improve the primary task of using only instance-level labels for
+loss function exhibit two critical limitations. First, their deci-
+time series classification. Furthermore, inspired by the homo-
+geneous uncertainty in MTL, we derive a novel uncertainty sion boundaries are prone to overfitting on noisy labels due
+loss function, which automatically adjusts the weights according to the sensitivity of the loss function to mislabeled samples
+to the degree of uncertainty of different tasks to optimize the [16], [17], [18]. Second, the focus on learning discriminative
+learning and prediction process of the model. The proposed
+features neglects the extraction of invariant temporal patterns,
+framework is evaluated on MTSC tasks, including human activity
+resulting in suboptimal generalization performance across
+recognition (HAR), air writing, and gesture recognition. In
+addition, we create a human–drone interaction (HDI) dataset unseen data distributions [19].
+consisting of 20 subjects and conduct real-world experiments The scarcity of high-quality labels in time series domains
+to evaluate the proposed framework. The extensive experiments poses a significant challenge to model training. For instance,
+conducted in various settings verify the effectiveness of the clinical time series data (e.g., ECG, EEG) require expert
+proposed framework.
+physician annotations, but the labeling process remains scarce
+Index Terms—Multitask learning (MTL), multivariate time due to data sensitivity and prohibitive costs. In addition,
+series classification (MTSC), supervised contrastive learning labels may contain noise from doctors’ differing diagnoses
+(SCL). or equipment errors, affecting disease feature learning [20].
+I. INTRODUCTION Contrastive learning (CL) can learn invariant representations
+TIME series data exist in many real-world scenarios, by comparing different views of input samples, thereby reduc-
+ing reliance on high-quality labels and mitigating overfitting
+including wind forecasting [1], stock forecasting [2],
+induced by noisy labels [21]. It divides the input samples
+human activity recognition (HAR) [3], industrial fault diagno-
+into positive and negative ones and learns representations
+sis [4], [5], and healthcare [6]. Such continuous data represent
+from the time series data by maximizing the similarity within
+states or events at points in time, making them ideal for ana-
+positive pairs and minimizing the similarity within negative
+lyzing trends, patterns, and anomalies. The key to analyzing
+pairs. A typical framework is SimCLR [22], which uses
+time series data is to extract the information-rich features for
+data augmentation methods to generate different views and
+in-depth analysis and decision support.
+focuses on maximizing the similarity of views from the same
+Multivariate time series classification (MTSC), which
+sample and minimizing the similarity of views from different
+focuses on predicting category labels of ordered real-valued
+samples. These CL-based models have been demonstrated in
+data, can be divided into traditional nondeep learning methods
+their ability to comprehensively learn the intrinsic represen-
+and advanced deep learning methods. Most traditional methods
+tations of unlabeled time series data [23], [24]. However, in
+Received 10 September 2024; revised 26 March 2025; accepted certain instances, they lack task-specific guidance, resulting
+4 September 2025. Date of publication 24 September 2025; date of current in suboptimal performance when applied directly to specific
+version 8 January 2026. (Corresponding author: Ke Li.)
+downstream tasks. To overcome this limitation, incorporating
+This work involved human subjects or animals in its research. Approval
+of all ethical and experimental procedures and protocols was granted by the labels from existing datasets is an effective strategy. Super-
+Institutional Ethics Committee of Beihang University. vised CL (SCL) uses the label information to optimize decision
+The authors are with the School of Aeronautic Science and Engineering,
+boundaries at the feature embedding level, enabling more
+Beihang University, Beijing 100191, China (e-mail: like@buaa.edu.cn).
+Digital Object Identifier 10.1109/TNNLS.2025.3607901 accurate temporal pattern recognition in sequence data [18],
+2162-237X © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 2 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 415
+[25]. By explicitly maximizing intraclass compactness and 2) A novel MTL module based on contrastive task uncer-
+interclass separability, SCL not only enhances discriminative tainty extends the Bayesian probability model based on task
+feature learning but also improves robustness to noisy labels uncertainty to SCL.
+and data variations inherent in real-world time series datasets. 3) A comprehensive large-scale real-world gesture dataset
+We desire to allow the framework to obtain the ability of on HDI research, consisting of more than 45 000 labeled
+robust to noisy time series by using SCL to obtain the sequences.
+intrinsic invariant features. Multitask learning (MTL) is a 4) Extensive experiments demonstrate that U-TFSCL
+prevalent paradigm for establishing the auxiliary task and achieves SOTA performance on MTSC tasks, outperforming
+using the relative information to facilitate the primary task existing methods by an average of 6.7% in classification
+[12], [26]. We propose to integrate SCL as an auxiliary accuracy across challenging test settings.
+task within the MTL framework to extract invariant temporal The rest of this study is organized as follows. Related works
+features. By simultaneously optimizing cross-entropy loss for are briefly reviewed in Section II. In Section III, our U-TFSCL
+the primary task and contrastive objectives for the auxiliary and the HDI dataset are introduced in detail. In Section IV, we
+task, this approach leverages the complementary strengths of conduct detailed experiments to demonstrate the performance
+discriminative and representation learning paradigms. How- of U-TFSCL and evaluate the impact of each component on the
+ever, conventional MTL frameworks are inherently constrained overall performance. Finally, Section V concludes this article
+by their reliance on strong task correlations and manual and discusses future work.
+hyperparameter tuning for auxiliary task weighting, which
+limits generalization in real-world scenarios with diverse noise II. RELATED WORKS
+distributions.
+A. Time–Frequency Domain Fusion for Time Series
+Deep learning approaches have demonstrated substantial
+Incorporating prior knowledge into models can signifi-
+promise for processing complex multivariate time series data
+cantly improve feature extraction, enhance generalization, and
+in the domain of MTSC. However, challenges remain in
+increase robustness to noise [28]. Frequency-domain fea-
+improving the invariant representations extraction capability
+tures, derived via Fourier transformations, serve as effective
+and the cross-domain generalization performance. To address
+prior knowledge, providing a global perspective that comple-
+these challenges, this study proposes a novel framework
+ments time-domain data [24], [26], [29], [30]. The key is
+named uncertainty-based time–frequency SCL (U-TFSCL),
+to effectively integrate these two domains to leverage their
+which systematically integrates SCL with homoscedastic
+complementary strengths. One intuitive approach is signal-
+uncertainty-based MTL. The proposed framework constructs
+level fusion via the short-time Fourier transform (STFT),
+a time–frequency dual-domain CL module that optimizes
+which transforms time series into 2-D spectrograms, thereby
+two complementary objectives: 1) intradomain consistency
+incorporating time–frequency information into model inputs
+within the time and frequency domains and 2) cross-domain
+[31]. Fusion can also occur at the feature level, for example,
+discrepancy minimization between the time and frequency
+Jin and Chen [32] proposed an end-to-end deep learning
+domains. By incorporating instance-level label information
+framework that employs time–frequency analysis to extract
+into the contrastive objectives, the module balances dis-
+features from vibration signals and combine them into input
+criminative learning and invariant representation learning;
+embeddings for transformers. Furthermore, tight feature align-
+it clusters samples from the same class while separating
+different classes and enforces invariant feature alignment ment can be achieved by learning the consistency between
+time- and frequency-domain features through cross-domain
+across time–frequency domains for the same instances. The
+CL [29] and by learning the domain independence through
+module generates joint time–frequency representations that
+intradomain CL [5].
+are directly optimized through end-to-end training with
+downstream classification tasks, ensuring semantic alignment
+between learned features and classification objectives. Fur- B. CL for Time Series
+thermore, we adopt the automatic weighting strategy that CL has emerged as a powerful self-supervised framework
+balances the loss function by weighting each task according to for learning representations by maximizing similarity between
+the homoscedastic uncertainty [27]. This strategy enables the positive pairs and minimizing dissimilarity between nega-
+model to adaptively adjust the weight of each task, allocating tive pairs. CL is extensively used in many fields, including
+more attention to uncertain and difficult tasks in the training image classification [22], video analysis [33], HAR [34],
+process. remote photoplethysmography (rPPG) [35], and time series
+To validate the effectiveness of the framework, we con- analysis [18], [23], [24]. Data augmentation is crucial in
+duct comprehensive experiments on six benchmark datasets, a CL-based framework; unlike traditional data augmentation
+including a newly constructed human–drone interaction (HDI) in computer vision, time series augmentation must consider
+dataset containing real-world gesture sequences from 20 par- temporal dependencies. For instance, TCL [36] splits the time
+ticipants. The key contributions of this work include the series into nonoverlapping windows and treats each window as
+following. an independent view, exploiting the properties of nonstationary
+1) A time–frequency domain contrast module based on SCL time series by assuming negative pairs for distant windows and
+fully learns the representation of time series through intratime, positive pairs for neighboring windows. The representation
+intrafrequency, and time–frequency domain consistency CL. of the input time series is captured by learning invariant
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 3 =====
+
+416 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+Fig. 1. Overview of U-TFSCL framework.
+features within the windows as well as differences between III. PRINCIPLE AND METHOD
+the windows. TS-TCC [37] uses two augmentation methods, A. Overview of the Proposed U-TFSCL Framework
+strong and weak augmentation, to convert the original series To fully exploit features across the time–frequency domains
+into two views and learn robust representations from the in the time series data, we propose the U-TFSCL framework,
+augmented views using temporal and contextual contrasting as shown in Fig. 1. This framework comprises a parallel
+modules. TS2Vec [38] generates different views by random encoder module operating within both the time and frequency
+masking operations on time steps and performs a hierarchical domains, a time–frequency domain SCL (TFSCL) module,
+CL strategy over augmented views, which enables robust and an MTL module that balances the loss based on task
+representations. Khosla et al. [25] extend the self-supervised uncertainty. These components aim to provide a comprehen-
+batch contrastive approach to the fully supervised setting, sive and effective approach for analyzing time series data.
+thereby enabling effective utilization of label information. The Specifically, the original time-domain signals are input into the
+clusters of points belonging to the same class are pulled U-TFSCL framework, where they are first converted to their
+together in embedding space while simultaneously pushing frequency-domain counterparts using a rapid Fourier trans-
+apart clusters of samples from different classes. Tripathi et form. These original and transformed signals are then fed to
+al. [39] directly use SCL for air writing recognition and parallel branches for time- and frequency-domain processing.
+achieve better performance than using cross-entropy loss. Within each branch, advanced data augmentation methods are
+The closest work to ours is [18], which proposes a novel employed to generate positive and negative sample pairs. Sub-
+framework for universal representation learning of multivariate sequently, these pairs are processed using independent encoder
+time series using instance-level and cluster-level SCL, aim- modules. These modules consist of several transformer blocks
+ing to capture complex patterns and dependencies for better and extract distinct time- and frequency-domain features from
+downstream task performance. However, this approach relies the pairs.
+on manually weighted loss combinations requiring domain Subsequently, the extracted features are fed into the TFSCL
+expertise for tuning, and its two-stage architecture freezes module, which uses SCL to calculate intradomain and interdo-
+the pretrained encoder during downstream tasks, restricting main losses and improve the performance of the classification
+joint optimization of cross-entropy and contrastive losses task by using the intradomain and interdomain compari-
+while neglecting explicit temporal-frequency consistency son tasks as auxiliary tasks. In this module, the time- and
+modeling. Our method addresses these constraints by inte- frequency-domain losses are calculated first. Then, the features
+grating adaptive multiloss weighting and instance-level labels that calculate the intradomain loss are projected into a shared
+driven explicit temporal-frequency alignment in an end-to-end latent space by separate projection layers. In this space, the
+framework. time–frequency domain consistency loss is calculated.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 4 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 417
+Fig. 2. Schematic of time–frequency domain data augmentation. (a) Original series in time domain. (b) Original series in frequency domain. (c) Augmented
+series in time domain. (d) Augmented series in frequency domain.
+After the TFSCL module, the multitask losses are fed into high-frequency components depends on the specificity of the
+the MTL module, which introduces a novel task uncertainty- signal. Therefore, this study did not augment a specific fre-
+driven weight adjustment strategy. This strategy enables the quency component but randomly perturbed the full frequency
+model to balance the learning of task-relevant and cross- band. To simplify the discussion, FFT(xT) is denoted as
+i
+domain features. This balance ensures that the model not xF,G represents the frequency-domain encoder, and hF and
+i F i
+only captures task-relevant features but also develops a h˜F are the original and augmented view embeddings in the
+i
+robust understanding of domain-independent features, thereby frequency domain, respectively. As the difference between the
+enhancing the adaptability and performance across a wide original data and its augmented view is generally minimal,
+range of time series analysis tasks. it is assumed that the original data and its augmented view
+are positive pairs in the time-domain branch, namely, (xT, x˜T),
+i i
+and in the frequency-domain branch, namely, (xF, x˜F). The
+i i
+B. Cross Time–Frequency Information Interaction Strategy different samples are negative pairs in the time-domain branch,
+For a given input time series sample xT, the random i.e., (xT, xT) and (xT, x˜T), and the frequency-domain branch,
+i i j i j
+dropout in [24] is used to generate time-domain augmented i.e., (xF, xF) and (xF, x˜F). To facilitate reading and reduce
+i j i j
+samples x˜T, and the time encoder G is used to map them repetition, in the subsequent content, we use the domain-
+i T
+to new embeddings, i.e., hT = G (x˜T) and h˜T = G (x˜T). specific superscript D ∈ {T, F}, which includes the time
+i T i i T i
+Similarly, in the frequency-domain branch, the time series is domain T and the frequency domain F, to introduce the
+augmented and projected after the fast Fourier transform (FFT) intradomain concepts.
+(cid:93)
+operations. i.e., hF = G (FFT(xT)) and h˜F = G (FFT(xT)). In a multiview batch, i ∈ I ≡ {1, . . . , 2N} is denoted as
+i F i i F i
+Each frequency component in the frequency domain represents the indices of the samples, and the self-supervised contrastive
+a corresponding basis function that plays a key role in signal loss is used to maximize the similarity within positive pairs
+processing [40], and perturbation augmentations (additions or and minimize the similarity within negative pairs
+deletions) to the frequency component may result in signifi-
+cant alterations to the time pattern. Therefore, the frequency X X exp (cid:0) hD · h˜D/τ (cid:1)
+domain is randomly augmented based on the augmentation LD = L i D = − log P exp i (cid:0) hD i · hD/τ (cid:1) (1)
+methods in [29]. i∈I i∈I a∈A(i) i a
+Fig. 2 illustrates the visualization results of time and
+frequency-domain augmentation for a time series sample. where · symbol denotes the dot product and hD and h˜D
+i i
+Zhang et al. [29] showed that in physiological signal data, are the original and augmented views of domain-specific
+the performance of perturbing low-frequency components was embeddings, respectively. τ is the temperature parameter to
+slightly better than that of perturbing the full frequency band. scale the sensitivity of the loss function; A(i) ≡ I{i} denotes
+Conversely, the opposite result was observed for mechanical the set of negative samples to be computed for the ith sample
+vibration signals. This implies that the selection of low- and (ith sample is called the anchor in CL), which contains 2(N−1)
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 5 =====
+
+418 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+negative samples; and in this loss, each anchor corresponds to In batch I, which contains 2N samples, i ∈ I¯ ≡ {1, . . . , N}
+one positive pair and 2(N − 1) negative pairs. and i ∈ I˜ ≡ {1, . . . , N} denote the indices of the nonaugmented
+We use the method in [25] to extend the self-supervised and augmented views, respectively. To ensure consistency with
+contrastive loss to a supervised setting. In SCL, the class of the loss functions in the time and frequency domains, i.e.,
+samples in the multiview batch is known, all samples that LT and LF , the vector inner product is used to calculate
+sup sup
+belong to the same class as the positive samples of the anchor, the distances dTF and d˜TF for both embeddings. The time-
+i i
+and the label information is used to extend the positive pairs. domain embeddings zT and z˜T are considered as anchors. The
+i i
+The extended loss function is as follows: indexed set of all frequency-domain positive samples with the
+same label as the anchor i in the nonaugmented view in that
+X
+LD = LD batch is defined as P¯(i) ≡ {p ∈ A¯(i) : yF = yT}. Similarly,
+sup sup,i p i
+i∈I the index set of all frequency-domain positive samples in the
+= − X |P 1 (i) | X log P exp e (cid:0) x h p i D (cid:0) · h h D D p / · τ h (cid:1) D/τ (cid:1) (2) a b u a g tc m h e i n s te g d iv v e i n ew by th P˜ a ( t i) ha ≡ ve {p th ∈ e A s ¯ a (i m ) e : y˜ la F p be = l y˜ a T i s }. an T c h h e or no i t i a n tio th n e s
+i∈I p∈P(i) a∈A(i) i a A¯(i) ≡ I¯ and A˜(i) ≡ I˜ are used to denote the set of negative
+samples corresponding to the original and augmented view
+where P(i) ≡ {p ∈ A(i)} is the index set of all the positive
+anchors, respectively. Each set contains N−1 negative samples.
+samples in the batch with the same label as anchor i and |P(i)|
+Minimizing the loss function LTF helps train the projection
+is the cardinality of the index set, which is used to normalize sup
+layers P to learn how to align samples of the same class in the
+the loss of different anchors. The label and similarity between D
+time–frequency domain using the inner product as a measure
+pairs of samples are used to pull in the positive pairs and push
+of similarity between samples. This process allows the time-
+out the negative pairs, which effectively improves the learning
+domain embedding zT and frequency-domain embedding zF to
+of the embedding hD by the domain-specific encoder G . i i
+i D be aligned. The embeddings are then concatenated as inputs
+In this study, an approach similar to that in [41] is used,
+to the classification module, i.e., zcat = Concat(zT, zF), and
+in which text and image modalities are projected into a i i i
+subsequently passed through an MLP layer with softmax
+common latent space through a linear projection layer. This
+activation to calculate the model prediction distributions. The
+approach is extended to time- and frequency-domain data.
+model prediction distributions are then measured using cross-
+These two domains are regarded as distinct modalities and
+entropy loss, which is used to quantify the difference between
+projected into a shared time–frequency domain latent space
+the model-predicted probability distribution, denoted by yˆ , and
+through a multilayer perceptron (MLP) projection layer. In i
+the probability distribution of the real labels y
+this space, the respective modal representations are combined i
+to promote mutual understanding and integration. Although the 1 X X n
+time- and frequency-domains represent different perspectives L pre = − I yˆ ij logy ij . (4)
+of the original input series and can be transformed into each i∈I j=1
+other by FFT and inverse FFT (IFFT), such transformations do A composite hybrid loss function is defined as L ,
+total
+not always directly reveal deeper connections between the two which consists of four parts: two domain-specific supervised
+domains. Learning the relationship between these two different contrastive loss LD , which focuses on the alignment of time-
+sup
+domains in a shared latent space not only captures the intrinsic domain features and frequency-domain features, respectively;
+structure of the data but also provides an inductive bias to the a time–frequency consistency-based loss LTF , which promotes
+sup
+model. This inductive bias helps improve the ability of the the consistency of time- and frequency-domain features and
+model to generalize new data, allowing it to be more flexible accurately reflects the intrinsic connections between the two
+and accurate in its predictions and analysis when dealing with domains; and a model prediction-based loss L , which mea-
+pre
+unknown time series data. sures the difference between the predicted probabilities and
+Specifically, the domain-specific projectors P D ∈ {P T , P F } the actual labels. The weighted sum of these four loss parts
+are used to project the embeddings obtained in each branch constitutes the total loss function of the model
+into the shared latent space to obtain new embeddings, i.e.,
+zT i = P T (hT i ) and z˜T i = P T (h˜T i ), and z i F = P F (h i F) and z˜ i F = L total = X (cid:0) λ D L s D up (cid:1) + λ TF LT su F p + λ pre L pre (5)
+P (h˜F ). Then, the supervised contrastive loss LTF is used to
+F i sup where parameters λ , λ , and λ are used to balance the
+D TF pre
+constrain the distance between the time- and frequency-domain
+contribution of each part of the loss to the total loss. This
+embeddings
+enables the model to be balanced and optimized in multiple
+X X dimensions during the training process. The selection of these
+LTF = LTF + LTfF
+sup sup,i sup,i parameters plays a critical role in determining the final per-
+i∈I¯ i∈I˜ formance of the model and affects the sensitivity and bias of
+= − X 1 X log exp (cid:0) zT i ·zF p /τ (cid:1) the model in handling tasks.
+|P¯ (i) | P exp (cid:0) zT · zF/τ (cid:1)
+i∈I¯ p∈P¯(i) a∈A¯(i) i a
+− X |P˜ 1 (i) | X log P exp e (cid:0) x z˜ p T i · (cid:0) z˜ z˜ F p T / · τ z˜ (cid:1) F/τ (cid:1) . (3) C. W M h T e L n B co a n s s e t d ru o c n tin H g o t m he os t c o e t d al as lo ti s c s U fu n n c c e t r i t o a n in L ty total , it is neces-
+i∈I˜ p∈P˜(i) a∈A˜(i) i a sary to consider several parameters that require careful tuning.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 6 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 419
+The optimal setting of these parameters is critical for the will reduce the contribution of L(W), while a smaller σ will
+model’s performance. However, traditional methods of param- increase its contribution. Furthermore, if σ is too large, the
+eter tuning, such as those relying on experience, intuition, objective will be penalized log(σ) as a constraint.
+or complex grid searches, are often difficult and expensive, In (2) and (3), the intradomain contrastive loss LD and
+sup,i
+making it difficult to find an optimal global solution. To the time–frequency consistency-based loss LTF have a sim-
+sup,i
+address this problem, we propose a novel uncertainty-based ilar structure to the probabilistic models in softmax, which
+approach. L is treated as a collection of different tasks motivates a new approach to optimize these losses. He et
+total
+with different but competing goals, and the uncertainty of these al. [42] explained the contrastive loss (InfoNCE loss) as a
+tasks is used to automatically learn how to assign weights to type of cross-entropy loss and considered the process of
+them. pulling positive sample pairs closer and negative sample pairs
+In Bayesian modeling, two main types of uncertainty can be farther away in CL as a classification task. This concept
+modeled: epistemic and aleatoric uncertainty. Epistemic uncer- provides a new perspective for optimizing contrastive loss
+tainty reflects the model’s own uncertainty of the data, whereas using probabilistic models. Probabilistic models are used with
+aleatoric uncertainty describes the inherent noise and variabil- an observation noise σ to transform the optimization of LD
+sup,i
+ity in the data. In the multitask setting, two aspects of aleatoric and LTF into classification task losses
+sup,i
+uncertainty are explored: heteroscedastic (data-dependent) and
+homoscedastic uncertainty (task-dependent). Homoscedastic
+uncertainty highlights the confidence levels across differ- LD = − 1 X log exp (cid:0) h i D·hD p /τ (cid:1)
+ent tasks, reflecting the inherent uncertainty associated with sup,i |P (i) | P exp (cid:0) hD · hD/τ (cid:1)
+p∈P(i) a∈A(i) i a
+regression or classification tasks [27]. Understanding this form (cid:18) (cid:19)
+1 X 1
+of uncertainty is critical to capturing the intricate connections ≈ L (W) + log (σ )
+|P (i) | σ2 p,i D
+between tasks and their respective roles in the learning process p∈P(i) D
+of a model. Therefore, homoscedastic uncertainty was used to 1
+evaluate the importance of different losses in MTL. ≈ σ2 L D,i + log (σ D ) (7)
+use S s pe S c C ifi L ca b l a l s y e , d a on m m ul a ti x ta im sk izi l n o g ss th f e un G c a ti u o s n sia w n a l s ike d l e ih ri o v o e d d w th it a h t LTF = − D 1 X log exp (cid:0) zT i · zF p /τ (cid:1)
+homoscedastic uncertainty. For ease of interpretation, this sup,i |P¯ (i) | p∈P¯(i) P a∈A¯(i) exp (cid:0) zT i · z a F/τ (cid:1)
+o se f c a tio n n et u w s o e r s k th w e ith sa i m np e u n t o x ta a ti n o d n w as eig in ht [ s 2 W 7]. . F f o W r i c s la t s h s e ifi o c u at t i p o u n t − 1 X log exp (cid:0) z˜T i ·z˜F p /τ (cid:1)
+tasks, the softmax function is used to compress the model |P˜ (i) | p∈P˜(i) P a∈A˜(i) exp (cid:0) z˜T i ·z˜ a F/τ (cid:1)
+output and sample from the output probabilities, and the (cid:18) (cid:19)
+1 X 1
+following probabilistic model of the classification task is ≈ L (W) + log (σ )
+defined with the observation noise σ: p(y = c | fW(x), σ) = |P¯ (i) | p∈P(i) σ2 TF p,i TF
+Softmax((1/σ2)fW(x)). This can be extended to the case 1 X (cid:18) 1 (cid:19)
+of multiclassification tasks with multiple model outputs: + |P˜ (i) | σ2 L p,i (W) + log (σ TF )
+p(y | fW) = p(y | fW(x)) . . . p(y | fW(x)). Here, y , . . . , y p∈P˜(i) TF
+1 k 1 k
+denote the multiple distinct outputs of the model; thus, we can 1
+≈ L + log (σ ) (8)
+obtain the loss function of the multioutput model L(W, σ
+1
+, σ
+2
+), σ2
+TF
+TF,i TF
+by the following log likelihood of the multitask:
+L (W, σ 1 , σ 2 ) where L D and L TF represent the supervised contrastive
+= −log (cid:0) p (cid:0) y , y = c | fW (x) , σ (cid:1)(cid:1) loss in the intradomain and in the time–frequency domain,
+1 2 respectively. When σ , σ →1, the simplifying assump-
+= −log (cid:0) p (cid:0) y 1 = c | fW (x) , σ 1 (cid:1)(cid:1) − log (cid:0) p (cid:0) y 2 = c | fW (x) , σ 2 (cid:1)(cid:1) tion of the last tran 1 sitio 2 n in (6) becomes an equal-
+(cid:18) (cid:18) 1 (cid:19)(cid:19) (cid:18) (cid:18) 1 (cid:19)(cid:19) ity. When the batch size N of dataset I is suffi-
+= −log Softmax fW (x) −log Softmax fW (x)
+σ2 σ2 ciently large, the summation over negative samples can be
+1 (cid:16) 2 (cid:17) approximated as: P exp(hD·hD/τ) → exp(hD · hD/τ) +
+= 1 L (W) + 1 L (W) + log P(cid:48) c exp σ 1 2 1 f c W (cid:48) (x) P a∈A(i) exp(h i D · h a D/τ) a . ∈ T A( h i) is trans i for a mation conve i rts th p e prob-
+σ2 1 1 σ2 2 2 (cid:0)P c(cid:48) exp (cid:0) f c W (cid:48) (x) (cid:1)(cid:1) σ 1 2 1 l e e n m tro i p n y to los a s. s A ta d n d d i a ti r o d na b l i l n y a , r w y it c h la s s u s ffi ifi c c i a e t n i t o l n y l t a a r s g k e b u a s t i c n h g si c z r e os N s- ,
+(cid:16) (cid:17)
+P c(cid:48) exp σ 1 2 f c W (cid:48) (x) we can assume that the probability contributions exp(h i D·hD p /τ)
++ log 2 for each positive sample p in P(i) are approximately equal.
+(cid:0)P(cid:48) c exp (cid:0) f c W (cid:48) (x) (cid:1)(cid:1) σ 1 2 2 By making appropriate simplifications and explicit assump-
+tions regarding these losses, the optimization objective is
+1 1
+≈ σ2 L 1 (W) + σ2 L 2 (W) + log (σ 1 ) + log (σ 2 ) (6) simplified while maintaining the consistency and stability of
+1 2 the loss function results. These loss functions are not only
+where L (W) = −log(softmax(y , fW(x))) and L (W) = smoothly differentiable but also structured to ensure that the
+1 1 2
+−log(softmax(y , fW(x))) denote the cross-entropy losses of task weights do not converge to zero during the optimization
+2
+y and y , respectively, and the noise σ is considered as the process, which ensures that the model balances the importance
+1 2
+learnable relative weights of different output losses. A larger σ of individual tasks during training. Thus, the total loss function
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 7 =====
+
+420 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+TABLE I
+DETAILS OF THE HDI DATASET
+Fig. 3. Schematic of gesture movements: (G1) move left, (G2) move right,
+(G3) hover, (G4) move up, (G5) move down, and (G6) move forward.
+1) using zero-crossing detection to automatically segment
+can be rewritten as
+gestures and nongestural signals in recorded signals and
+(cid:18) (cid:19)
+L = X 1 L +log (σ ) + 1 L 2) manually examining the results of the automatic label-
+total σ2 D D σ2 TF ing and eliminating the misclassified signal segments that
+D TF
+1 (cid:0) (cid:1) oscillated up and down around smaller mean values, which
++ log (σ ) + L + log σ (9)
+TF σ2 pre pre were inferred to be either preparatory movements or hand
+pre
+rebound oscillations after the rapid execution of a gesture.
+where σ , σ , and σ denote the homoscedastic uncertain-
+D TF pre After eliminating invalid signal segments, we obtained 3318
+ties of L , L , and L , respectively. The larger value of
+D TF pre gesture instances. For each instance, a lookback window with
+σ indicates that the task is more uncertain and it is harder to
+a length of 20 sample points and a stride of ten sample points
+optimize the total loss function L , and the importance of the
+total was used to generate samples; after the lookback window
+task in the total loss function decreases and has a lower weight.
+operation, the valid gesture dataset contains 45 376 samples.
+Conversely, a smaller σ indicates that the task is simpler and
+Table I shows the details of each gesture; it is clear that
+will have a higher weight value in L . To avoid division
+total the duration time (average in 0.94 ± 0.34 s) and the length of
+by zero and to make the values more stable during learning,
+each sample are all shorter than the previous gesture dataset
+s: = log(σ2) is substituted into (9), thus giving the final loss
+[45], which results in reduced intersample variability, thereby
+function L , where s , s , and s are in the optimization
+total D TF pre decreasing the model’s ability to sufficiently capture dynamic
+set of learnable parameters
+patterns or periodic features, ultimately significantly affecting
+(cid:18) (cid:19)
+L = X 1 L + s D + 1 L + s TF the performance of MTSC tasks. In addition, compared to
+total esD T 2 esTF TF 2 traditional MTSC datasets such as UEA [46] (mostly less than
+1 s 10 000 samples), our HDI dataset provides more than 45 000
++ L + pre (D ∈ T, F) . (10)
+espre pre 2 samples, addressing the critical data scarcity in MTSC. This
+scale enables robust training of deep neural networks while
+D. Development and Features of the HDI Gesture Dataset reducing the risk of overfitting, making it more suitable for
+the training and evaluation of deep learning networks.
+To complement the existing MTSC dataset, based on previ-
+ous gesture HDI studies [43], [44], we designed six gestures
+for a challenging gesture-based HDI task: (G1) Move Left, IV. EXPERIMENT
+(G2) Move Right, (G3) Hover, (G4) Move Up, (G5) Move
+A. Experimental Settings
+Down, and (G6) Move Forward; Fig. 3 illustrates the move-
+ment of each gesture. In this task, participants were required The superiority of the framework is validated across exten-
+to control drone flight trajectories through six predefined hand sive and widely used MTSC datasets in various domains.
+gestures while wearing an inertial measurement unit (IMU) The programs are written in Python 3.8 using PyTorch and
+sensor on their dominant hand. All participants started the executed on NVIDIA GeForce RTX 3090Ti GPUs. Two
+experiment without prior training on the target gestures to layers of transformer blocks are used as encoders in both
+preserve interindividual variability. time and frequency domains. For time-domain augmentation,
+We obtained data from 20 participants (14 males and six the dropout ratio is set to 0.1, and for frequency-domain
+females) to construct the gesture dataset; the participants have augmentation, the perturbation ratio is set to 0.1. Additionally,
+an average age of 22.6 (±2.9) and mostly had backgrounds the temperature parameter τ in the TFSCL module is set to
+in computer science. All participants are right-handed. Partic- 0.07.
+ipants repeated each gesture approximately 30 times after a The Adam optimizer was employed with a learning rate of
+3-s preparation period for each gesture. Recorded six-channel 1e−4, weight decay of 3e−4, β1 = 0.9, and β2 = 0.99. Given
+signals (accelerometer and gyroscope) during executions are the difference in the dataset sizes, a batch size of 64 is applied
+transmitted at 200 Hz via Bluetooth low energy (BLE) to a after the pre-experiment. The data are split into 60%, 20%, and
+ground station. 20% portions for training, validation, and testing, respectively.
+In order to improve the efficiency of labeling and to To ensure robustness, the experiments are repeated five times
+obtain more high-quality labeled data, we adopted a semi- with five different random seeds, and the results are reported
+automatic data labeling method that consisted of two phases: based on the averages and standard deviations over these runs.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 8 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 421
+TABLE II writing, HAR represents human activity recognition, and G
+DETAILS OF THE SIX DATASETS represents gesture.
+C. Experimental Results of the U-TFSCL Framework
+In the experiments, a testing method with two test datasets
+is used: the standard setting and the leave-one-subject-out
+(LOSO) setting. In the standard setting, the test dataset con-
+tains subjects who are already included in the training dataset.
+Conversely, in the LOSO setup, the test dataset consists of
+subjects excluded during the training process. This setting
+enables the comprehensive evaluation of the generalization
+The model is optimized over 100 training epochs. Reported capability of the model. The LOSO experiment is valuable for
+numbers are expressed in percentage values for better reading. evaluating the ability of the model to predict the results of data
+not used in the training process. By gradually excluding each
+subject, the experiment ensured that the model performance
+B. Dataset
+was reliable and robust across a range of dataset subsets.
+In this study, the performance of the proposed U-TFSCL is
+Table III shows the model performances under the two test
+evaluated across multiple MTSC datasets in different domains,
+setups. Due to the limitations of the HAR dataset, which does
+including gesture recognition, air writing recognition, and
+not allow subject-based division owing to the mixing of all
+HAR. Furthermore, we create a user-defined dataset, compris-
+participants’ data, LOSO experiments cannot be conducted
+ing six upper body gestures, to evaluate the performance of
+on these datasets. Consequently, in Table III, “-” is used
+the framework in real-world scenarios. This approach ensures
+to indicate the absence of the experimental results for this
+the extensive evaluation of the capabilities of the framework
+scenario. Despite these limitations, the experimental results
+across different applications and environments.
+provide valuable insights into the performance of the proposed
+1) Air Writing-A: The dataset contains 21 450 6-D samples U-TFSCL under different test settings.
+from 26 English uppercase letters, acceleration, and gyroscope
+Under the standard setting, U-TFSCL achieved recognition
+data collected at a frequency of 62 Hz from a Microsoft band
+accuracy rates of over 95% for all six datasets. On average, the
+worn on the dominant hand of the user [47].
+framework exhibited an impressive accuracy rate of 96.5%.
+2) Air Writing-B: The dataset contains 5200 6-D samples These results demonstrate the effectiveness of the proposed
+of 26 English uppercase letters, and the signals are recorded
+framework under typical scenarios. When considering the
+at a sampling rate of 200 Hz and downsampled to 62 Hz [39].
+LOSO setting, which simulates real-world applications, the
+3) HAR-A: The dataset contains 10 299 9-D samples of
+framework maintained a high level of performance, with an
+six daily activities, including standing, sitting, walking, walk-
+average accuracy rate of 79.8%. This finding demonstrates the
+ing downstairs, walking upstairs, and lying down. Data are
+robustness of the framework in dealing with novel data and its
+collected from the IMUs in the smartphone [48].
+strong generalization capabilities. U-TFSCL is not only adept
+4) HAR-B: The dataset contains 11 771 activities per-
+at using existing knowledge from the training data but is also
+formed by 30 subjects, mostly female, between the ages of 18
+capable of adapting to and performing well on new data, which
+and 60. Activities are categorized into 17 fine-grained classes
+shows the potential of the framework for practical applications
+within two categories: nine activities of daily living and eight
+in real-world scenarios.
+types of falls [49].
+5) Gesture-A: The dataset contains 12 different gesture
+D. Ablation Experiment
+categories, five of which are static (e.g., wave-in and wave-
+out) and six are dynamic (e.g., up and down, and left and In this section, the importance of various components of
+right movements). Additionally, one gesture in a relaxed state U-TFSCL is evaluated through a series of ablation studies.
+is included. Data are collected from 85 users using armband Different model variants were constructed by adjusting and
+electromyogram (EMG) sensors and IMUs [45]. removing key modules, and then, a detailed comparative
+6) Gesture-B (Ours): Based on typical HDI tasks, six analysis was performed.
+interactive gestures are designed and data are collected from Initially, the model was simplified by removing the MTL
+20 participants (14 males and six females) to construct a module while retaining the TFSCL module. This step allows
+dataset of these gestures. The participants were asked to repeat the independent evaluation of the performance of the TFSCL
+each gesture set 30 times based on the gesture collection. Dur- module. By gradually adding contrastive task losses, their
+ing each experiment, the output signals from the accelerometer impact on the overall framework performance is discussed
+and gyroscope of the IMUs were recorded at a sampling rate in depth. Subsequently, the potential of the MTL modules is
+of 200 Hz. This resulted in a final dataset containing 45 376 discussed. The complete TFSCL module was added and the
+gesture samples. weights of different contrastive tasks within the MTL module
+Table II shows the details of the datasets used in the were adjusted. Through this process, we can evaluate the
+experiment, including the sampling rates, dataset size, data impact of the weights for different tasks on the performance,
+sample length, number of data channels, class numbers, and thereby optimizing them to adapt better to MTL environments.
+number of participants in the dataset. AW represents air The final part of the ablation studies mainly explored the
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 9 =====
+
+422 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+TABLE III
+EXPERIMENTAL RESULTS OF THE U-TFSCL FRAMEWORK
+TABLE IV
+ABLATION STUDY RESULTS FOR FEATURE FUSION IN THE TFSCL MODULE
+impact of instance-level labels on model performance. To frequency-domain contrastive loss, and their combination,
+this end, we separately increased the number of labels and respectively. In this loss fusion strategy, the projection layer is
+increased the maximum number of positive pairs of the anchor removed from the TFSCL, allowing the features derived from
+in the TFSCL module. Furthermore, the impact of different the domain-specific supervision contrastive loss to be concate-
+data augmentation ratios and strategies on performance was nated into new features. The features are further processed
+discussed. through a fully connected layer to obtain the final prediction
+1) Ablation Experiments of the TFSCL Module: In this probabilities. By contrast, LT + LF + LTF indicates the
+sup sup sup
+section of the ablation study, a strategy was adopted in which use of a full TFSCL module. The final loss of the model is
+the loss weights for different tasks are manually set to be composed of contrastive losses computed within the module
+equalized based on the assumption that all tasks are equally and the cross-entropy loss based on the output features of
+important to the model during the learning process. The the module. The experiments are conducted using the AW-B
+purpose of this strategy is to eliminate any potential effects dataset.
+of the MTL module, thereby allowing a clearer evaluation of Table IV shows the impact of different feature fusion
+the contribution of each component to the performance of the strategies and combinations of loss functions on the model per-
+model. formance. Specifically, within the SCL loss fusion strategies,
+We compare the performance of the model with and without the combination of the time-domain loss LT and frequency-
+sup
+the TFSCL module. Without the TFSCL module, the original domain loss LT outperforms the use of either loss function in
+sup
+model is simplified into two independent submodels, each isolation. This finding suggests that the time- and frequency-
+of which processes the time- and frequency-domain features. domain features are complementary and collectively enhance
+The outputs of these submodels are then integrated using the predictive capabilities of the model. The strategy using
+specific fusion strategies. Three common fusion strategies are LT + LF was then compared with the fusion strategy
+sup sup
+investigated: sum, maximum, and concatenation. within the cross-entropy loss function. The results indicate
+When using the TFSCL module, LT , LF , and LT +LF a better performance for the former approach, which under-
+sup sup sup sup
+represent the use of only the time-domain contrastive loss, scores the importance of CL in a time series, highlighting
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 10 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 423
+TABLE V
+ABLATION STUDY RESULTS FOR THE MULTITASK LOSS FUSION IN THE MTL MODULE
+its ability to capture and learn generalizable representations overall performance and demonstrating its effectiveness across
+of time series more effectively. Furthermore, the performance multiple datasets.
+of the full TFSCL module is evaluated, which includes the Specifically, in two experiments with different test settings
+time–frequency domain consistency loss. Among the seven on the AW-B dataset, the uncertainty-based weight assignment
+fusion strategies, the full TFSCL module achieves the highest strategy resulted in an average performance improvement of
+scores. approximately 0.5%, a result similar to that in [50], which
+Notably, these results are obtained when all the contrastive used a regression task as an auxiliary task to the classification
+task weights are equal. Although the potential competitive task with weight assignment based on the respective uncertain-
+relationships between these tasks remain to be determined, ties, compared with a single-task setup, which improved the
+achieving the highest performance with such a straightforward classification performance by 0.6% compared with a single-
+setup indicates that CL within the shared time–frequency task setup. Although the improvement is limited, this strategy
+domain can effectively extract more universal representations remains an effective solution for automatically determining
+from the series, thereby positively influencing downstream the optimal parameters for multiple tasks. In addition, the
+classification tasks. experimental results reveal the specific effects of different
+2) Ablation Experiments of the MTL Module: The full weight assignments on the model performance, which provides
+MTL module contains four tasks: the time-domain CL L , valuable insights for further optimization of the model. When
+T
+the frequency-domain CL L , the time–frequency consistency the weight assignment is biased to the time–frequency consis-
+F
+CL L , and supervised classification L . To simplify the tency comparison learning, the model demonstrates enhanced
+TF pre
+capability in capturing cross-domain features, which con-
+experimental design in this section, the following strategy
+tributes to an improved understanding and generalization of the
+is adopted; when manually setting the weights, the time-
+relationship across domains. Furthermore, if the weights are
+and frequency-domain contrastive losses are merged into the
+biased toward the primary classification task, the classification
+intradomain contrastive loss and assigned equal weights. When
+performance of the model improves slightly. For example,
+using the uncertainty-based weighting strategy (i.e., the full
+the model performance under the (0.1, 0.1, 0.8) strategy in
+MTL module), the weights of each of the four tasks are
+the AW-B dataset is superior to that under the (0.8, 0.1,
+calculated separately. This design allows clear observations
+of how different task weights affected the performance. 0.1) strategy because more weights are assigned to directly
+Four sets of different weight settings are manually derived to related tasks. Although manually set weights may result in
+discuss the potential impact of different tasks on performance. superior performance in certain scenarios, they are typically
+not as effective as dynamic weight assignment strategies
+In addition to a setting in which all tasks are equally weighted,
+based on task uncertainty, which provide greater flexibility
+the other three settings emphasize specific tasks: a weight
+and adaptability in automatic adjustments to optimize model
+distribution of (0.8, 0.1, 0.1), for the importance of CL in both
+performance.
+the time- and frequency-domains; a weight distribution of (0.1,
+0.8, 0.1), for the role of cross-domain consistency CL; and a 3) Effect of Labels in TFSCL Module: To investigate the
+weight distribution of (0.1, 0.1, 0.8), for directly improving impact of labels on model performance, we generated the
+the classification performance of the model. Experiments are contrastive mask by limiting the percentage of labels involved
+also conducted on the AW-B dataset. in the calculation of LT , LF , and LTF for each batch and set
+sup sup sup
+Table V presents the results of the ablation studies on the up five different label percentages: 0%, 25%, 50%, 75%, and
+MTL module. The uncertainty-based weight assignment strat- 100%. When the percentage is set to 0%, the contrast methods
+egy exhibited the best performance. This may be attributed to degrade to SimCLR [22], and when the percentage is set to
+the process of dynamically adjusting the weights for each task 100%, it becomes the standard SCL [25].
+and aligning them with the specific attributes of the dataset. Fig. 4(a) illustrates the generation of the matrix M ∈
+c
+This strategy ensures that the model adapts its focus based on {0, 1}L×L, which is used as the mask to calculate the total
+the inherent uncertainties within each task, thereby improving distance within the positive pairs in the batch. Specifically,
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 11 =====
+
+424 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+TABLE VI
+EFFECT OF DIVERSE AUGMENTATION STRATEGIES
+Fig. 4. Effect of the number of labels on performance. (a) Generate mask Mc
+by limiting the number of labels involved in the loss calculation. (b) Accuracy
+as a function of the percentage of labels. Standard and LOSO mean two test
+methods. Red markers represent the best accuracy. Standard and LOSO mean
+two test methods.
+4) Effect of the Data Augmentation: In this section, we
+compared the effects of different augmentation strategies on
+model performance, including different data augmentation
+methods and augmentation ratios. Specifically, we increased
+the augmentation ratios in our augmentation method (i.e.,
+random dropout in the time domain and random perturbation
+in the full frequency band) of the original manuscript from
+0.05 to 0.2. Additionally, we compared three commonly used
+time series augmentation strategies [51], and the settings
+of these strategies were kept consistent with those in the
+original article. Considering that all these strategies performed
+augmentation in the time domain and were not specifically
+Fig. 5. Effect of maximum number of positive pairs per anchor on perfor- designed for frequency-domain features, we applied these aug-
+mance in AW-B dataset. Red markers represent the best accuracy. Standard mentation strategies to the original time signal xT to generate
+and LOSO mean two test methods. the augmented view x˜T. We then generated the fr i equency data
+i
+and its augmented view xF = FFT(xT), x˜F = FFT(x˜T) through
+i i i i
+FFT. Subsequently, these data were fed into the domain-
+we segment vectors y of original length L and use only the
+specific encoder G to generate embeddings and perform the
+first α percentage of data y to generate the subsequence y . D
+α following calculations.
+Then, we compute the matrix M ∈ {0, 1}αL×αL, where each
+y Table VI shows the results, and “-” is used to indicate
+element indicates whether the corresponding pair of labels in
+the setting consistent with the original article. The dropout
+y is identical. The block-diagonal matrix M is formed as the
+α c strategy with an augmentation ratio of 0.1 achieves the best
+direct sum of M and the identity matrix I ∈ {0, 1}(1−α)L×(1−α)L,
+y results, while both higher and lower ratios lead to decreased
+denoted M = M ⊕ I.
+c y performance. Therefore, we adopt for using a dropout ratio
+Fig. 4(b) shows the result. For two test settings, the model
+of 0.1 in our method. Additionally, the performance of the
+performance improves as the percentage of labels increases.
+other three data augmentation strategies was lower than that
+Among them, the performance improvement is particularly
+of dropout, with the Rotation strategy showing a significant
+significant when the label percentage is from 0% to 25%, with
+performance gap, of over 8%. This is because randomly flip-
+increases of 5.4% and 8.9%. The best performance is achieved
+ping the channels of the time series data in this augmentation
+when all labels are used.
+strategy distorts the semantic information and reduces the
+To further investigate how the increase of labels in the
+quality of the representation.
+TFSCL module improves the performance, the maximum
+number of positive pairs per anchor is increased from 1 to
+unlimited. Here, 1 signifies the inherent augmented view in
+E. Contrast Experiments
+CL, while unlimited aligns with standard SCL. Fig. 5 shows
+the result. When the maximum number is increased from 1 The U-TFSCL framework was thoroughly evaluated and
+to 3, the performance is significantly improved in both tests, compared with classical machine learning algorithms and
+which is 6.49% and 13.38%. However, when the maximum SOTA deep learning models to demonstrate its exceptional
+number is increased further, the performance enhancement is performance. Baselines were implemented following corre-
+not readily apparent. This is attributable to the utilization of sponding studies, including KNN, XG Boost, FCN [52],
+a batch size of 64, whereas the AW-B dataset encompasses 1D-Resnet [53], Bi-LSTM [54], TSTformer [55], and Con-
+as many as 26 classes. Furthermore, the data distribution vTran [56]. To implement these deep learning models, the
+is uniform across all classes, without any long-tailed cases. construction designs presented in the original articles are
+Consequently, the number of positive pairs in the batch for strictly followed. For hyperparameters presented in their mod-
+each anchor is seldom greater than three. els, but not discussed in this study, consistency was maintained
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 12 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 425
+TABLE VII
+AVERAGE ACCURACY OF DIFFERENT MTSC MODELS OVER SIX MULTIVARIATE TIME SERIES DATASETS
+with the original papers, while other parameters are adapted
+to the settings in this study.
+Table VII presents the results of an extensive comparison
+of the novel framework with the baselines, emphasizing four
+key performance indicators: accuracy, precision, recall, and F1
+score. The best results are highlighted in bold and the second-
+best results are underlined. The findings show the mean and
+standard deviation for multiple training runs; both the KNN
+and XG Boost algorithms are deterministic, which precludes
+the calculation of standard errors associated with multiple
+training runs.
+In the standard test setting, U-TFSCL demonstrates excep-
+tional performance across multiple datasets, securing five
+first-place and one second-place ranking out of six second- Fig. 6. Accuracy as a function of temperature for U-TFSCL in AW-B dataset.
+place settings. In terms of quantitative measures, U-TFSCL Standard and LOSO mean two test methods.
+outperforms the other transformer-based methods by achieving
+an overall improvement of 1.89% in classification accuracy.
+the full phase of the action; thus, even samples belonging
+In the LOSO test setting, the framework exhibited a more to the same class have a large difference in the time- and
+significant advantage, achieving the best results in the three frequency-domain features. This significant difference poses
+datasets and surpassing the second-ranked model by 6.5% in
+a challenge to the classification capability of the model. In
+terms of average accuracy. The outstanding performance of the
+addition, using auxiliary tasks to improve the generalization
+LOSO experiment demonstrates the exceptional adaptability of
+ability of the model may introduce a larger inductive bias
+the framework to out-of-distribution data. This demonstrates
+into the G-B dataset. This bias may cause the model to have
+the effectiveness of the method, which is particularly adept difficulty generalizing the features of the time series, which
+at overcoming the inherent challenges of time series classifi- can affect classification accuracy.
+cation, particularly in scenarios where data are scarce. These
+significant improvements are attributed to carefully designed
+F. Hyperparameter Sensitivity
+CL tasks, which are designed to deeply learn intrinsically
+invariant representations of time series. In previous experiments in this article, all of our results used
+While further analyzing the performance of the U-TFSCL a temperature of τ = 0.07. Smaller temperatures benefit train-
+framework on different datasets, it is observed that although ing more than higher ones, but extremely low temperatures
+the framework showed significant performance advantages are harder to train due to numerical instability [29]. Fig. 6
+across the other five datasets, such advantages are less sig- shows the performances of two test methods on the AW-B
+nificant on the G-B dataset, both on the standard and on datasets. The model achieves the best performance when the
+LOSO settings. This result may be attributed to the unique temperature is 0.07 or 0.1. Compared to the contrastive-based
+characteristics of the G-B dataset. Specifically, the G-B dataset methods, whose performance tends to present a reverse-U
+is created with a sampling rate of 200 Hz, with each time series shape [57]. The performance of U-TFSCL remains stable
+sample consisting of only 20 points. This setting implies that after a rise in temperature in two different test methods.
+each sample contains only 0.1 s of action segments. Compared This is because models with a large temperature tend to be
+to the complete action with an average time length of 1.3 s, more tolerant of semantically consistent samples, leading to
+such a short sample length is clearly insufficient to capture the inability to generate uniformly distributed embeddings,
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 13 =====
+
+426 IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING SYSTEMS, VOL. 37, NO. 1, JANUARY 2026
+whereas, in our framework, this uniformity is guaranteed by [3] F. Moya Rueda, R. Grzeszick, G. A. Fink, S. Feldhorst, and M. Ten
+the labels. Hompel, “Convolutional neural networks for human activity recognition
+using body-worn sensors,” Informatics, vol. 5, no. 2, p. 26, May 2018,
+doi: 10.3390/informatics5020026.
+[4] W. Gao, H. Jin, and G. Yang, “Series arc fault diagnosis method
+G. Computational Cost Analysis
+of photovoltaic arrays based on GASF and improved DCGAN,” Adv.
+The computational cost of U-TFSCL was evaluated. The Eng. Informat., vol. 54, Oct. 2022, Art. no. 101809, doi: 10.1016/
+j.aei.2022.101809.
+U-TFSCL, which includes two transformer blocks in each
+[5] Y. He, C. Zhao, and W. Shen, “Cross-domain compound fault diagnosis
+domain-specific encoder, has a total of 0.86 million of trainable
+of machine-level motors via time–frequency self-contrastive learning,”
+parameters. During inference, the GPU memory usage was IEEE Trans. Ind. Informat., vol. 20, no. 7, pp. 1–10, Jul. 2024, doi:
+11.46 MB, and the throughput reached 1.67 kf/s. After training 10.1109/TII.2024.3384603.
+[6] Y. Xu, S. Biswal, S. R. Deshpande, K. O. Maher, and J. Sun, “RAIM:
+with the G-B dataset and conducting real-world tests, the
+Recurrent attentive and intensive model of multimodal patient monitor-
+system’s delay was approximately 0.4 s. This delay includes ing data,” in Proc. 24th ACM SIGKDD Int. Conf. Knowl. Discovery Data
+data preprocessing, BLE data transmission time, and inference Mining, Jul. 2018, pp. 2565–2573, doi: 10.1145/3219819.3220051.
+[7] H. P. Gupta, H. S. Chudgar, S. Mukherjee, T. Dutta, and K. Sharma,
+time. These results demonstrate the potential of the framework
+“A continuous hand gestures recognition technique for human-
+for practical applications in real-world scenarios. The compu- machine interaction using accelerometer and gyroscope sensors,” IEEE
+tations were performed on a machine equipped with an Intel Sensors J., vol. 16, no. 16, pp. 6425–6432, Aug. 2016, doi: 10.1109/
+JSEN.2016.2581023.
+i7 2.5-GHz CPU and 64 GB of RAM.
+[8] Y.-T. Liu, Y.-A. Zhang, and M. Zeng, “Novel algorithm for hand
+gesture recognition utilizing a wrist-worn inertial sensor,” IEEE
+Sensors J., vol. 18, no. 24, pp. 10085–10095, Dec. 2018, doi: 10.1109/
+V. CONCLUSION
+JSEN.2018.2873003.
+In this study, a novel framework U-TFSCL was proposed [9] T. Perumal, N. Mustapha, R. Mohamed, and F. M. Shiri, “A compre-
+hensive overview and comparative analysis on deep learning models,”
+with higher classification accuracy to solve the MTSC problem
+J. Artif. Intell., vol. 6, no. 1, pp. 301–360, 2024, doi: 10.32604/
+and construct a real-world gesture dataset of HDIs to evaluate jai.2024.054314.
+the proposed framework. [10] Y. Huang, G. G. Yen, and V. S. Tseng, “Snippet policy network v2:
+The main contribution of this study is the design of two Knee-guided neuroevolution for multi-lead ECG early classification,”
+IEEE Trans. Neural Netw. Learn. Syst., vol. 35, no. 2, pp. 2167–2181,
+key modules: the time–frequency contrastive module TFSCL, Feb. 2024, doi: 10.1109/TNNLS.2022.3187741.
+which uses time- and frequency-domain SCL as auxiliary [11] S. Mauceri, J. Sweeney, M. Nicolau, and J. McDermott, “Dissimilarity-
+tasks; and the MTL module, which is driven by task uncer- preserving representation learning for one-class time series
+classification,” IEEE Trans. Neural Netw. Learn. Syst., vol. 35, no. 10,
+tainty. These modules are rationally organized in the proposed pp. 13951–13962, Oct. 2024, doi: 10.1109/TNNLS.2023.3273503.
+framework. After detailed and extensive experiments, the [12] C. Wei, Z. Wang, J. Yuan, X. Wang, H. Liu, and Q. Zhao, “SemiHAR:
+following conclusions are drawn. Improving semisupervised human activity recognition via multitask
+learning,” IEEE Trans. Neural Netw. Learn. Syst., vol. 36, no. 1,
+1) The combination of time- and frequency-domain infor-
+pp. 1884–1897, Jan. 2025, doi: 10.1109/TNNLS.2023.3330879.
+mation significantly improved the performance of the model. [13] N. Mohammadi Foumani, L. Miller, C. W. Tan, G. I. Webb, G. Forestier,
+The results of the ablation experiments on the TFSCL module and M. Salehi, “Deep learning for time series classification and extrinsic
+regression: A current survey,” ACM Comput. Surv., vol. 56, no. 9,
+show that the model using both types of information signifi-
+pp. 1–45, Oct. 2024, doi: 10.1145/3649448.
+cantly outperformed the model using only one modality. [14] Y. Zheng, Q. Liu, E. Chen, Y. Ge, and J. L. Zhao, “Exploiting multi-
+2) The number of labels used in CL affects the number channels deep convolutional neural networks for multivariate time series
+of positive pairs per anchor, which in turn influences the classification,” Frontiers Comput. Sci., vol. 10, no. 1, pp. 96–112, Feb.
+2016, doi: 10.1007/s11704-015-4478-2.
+performance of the model. When using the full set of labels in
+[15] A. Ramanathan and J. McDermott, “Fall detection with accelerome-
+the TFSCL module, the model achieves optimal performance. ter data using residual networks adapted to multi-variate time series
+3) The MTL module dynamically adjusted the task weights classification,” in Proc. Int. Joint Conf. Neural Netw. (IJCNN), Jul. 2021,
+pp. 1–8, doi: 10.1109/IJCNN52387.2021.9533670.
+based on task uncertainty, which not only improved per-
+[16] S. Sukhbaatar, J. Bruna, M. Paluri, L. Bourdev, and R. Fergus, “Training
+formance but also avoided the cumbersome network search convolutional networks with noisy labels,” 2014, arXiv:1406.2080.
+process, thus determining the approximate weight combina- [17] Z. Zhang and M. R. Sabuncu, “Generalized cross entropy loss for train-
+tions more efficiently. ing deep neural networks with noisy labels,” 2018, arXiv:1805.07836.
+[18] N. Moradinasab et al., “Universal representation learning for multi-
+Future work will further explore the applicability of the variate time series using the instance-level and cluster-level supervised
+proposed framework to a wide range of real-world time series contrastive learning,” Data Mining Knowl. Discovery, vol. 38, no. 3,
+pp. 1493–1519, May 2024, doi: 10.1007/s10618-024-01006-1.
+classification applications and evaluate its performance in
+[19] S. Zhao et al., “Rethinking self-supervised learning for time series
+terms of domain adaptation. This framework provides new
+forecasting: A temporal perspective,” Knowl.-Based Syst., vol. 305, Dec.
+perspectives and more efficient solutions in the field of time 2024, Art. no. 112652, doi: 10.1016/j.knosys.2024.112652.
+series analysis. [20] E. Eldele, M. Ragab, Z. Chen, M. Wu, C.-K. Kwoh, and X. Li, “Label-
+efficient time series representation learning: A review,” IEEE Trans.
+Artif. Intell., vol. 5, no. 12, pp. 6027–6042, Dec. 2024, doi: 10.1109/
+REFERENCES TAI.2024.3430236.
+[21] K. Zhang et al., “Self-supervised learning for time series analy-
+[1] W. Zheng and J. Hu, “Multivariate time series prediction based on sis: Taxonomy, progress, and prospects,” IEEE Trans. Pattern Anal.
+temporal change information learning method,” IEEE Trans. Neural Mach. Intell., vol. 46, no. 10, pp. 6775–6794, Oct. 2024, doi: 10.1109/
+Netw. Learn. Syst., vol. 34, no. 10, pp. 7034–7048, Oct. 2023, doi: TPAMI.2024.3387317.
+10.1109/TNNLS.2021.3137178. [22] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple
+[2] M. Hou et al., “Stock trend prediction with multi-granularity data: A framework for contrastive learning of visual representations,” 2020,
+contrastive learning approach with adaptive fusion,” in Proc. 30th ACM arXiv:2002.05709.
+Int. Conf. Inf. Knowl. Manage., Oct. 2021, pp. 700–709, doi: 10.1145/ [23] E. Eldele et al., “Time-series representation learning via temporal and
+3459637.3482483. contextual contrasting,” 2021, arXiv:2106.14112.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
+
+===== PAGE 14 =====
+
+ZHANG et al.: TIME SERIES CLASSIFICATION BASED ON SUPERVISED CL AND HOMOSCEDASTIC UNCERTAINTY 427
+[24] L. Yang and S. Hong, “Unsupervised time-series representation learning [47] T. Yanay and E. Shmueli, “Air-writing recognition using smart-bands,”
+with iterative bilinear temporal-spectral fusion,” in Proc. Int. Conf. Pervas. Mobile Comput., vol. 66, Jul. 2020, Art. no. 101183, doi:
+Mach. Learn., Jun. 2022, pp. 25038–25054. 10.1016/j.pmcj.2020.101183.
+[25] P. Khosla et al., “Supervised contrastive learning,” in Proc. NeurIPS, [48] D. Anguita, A. Ghio, L. Oneto, X. Parra, and J. L. Reyes-Ortiz, “A public
+2021, pp. 18661–18673. domain dataset for human activity recognition using smartphones,” in
+[26] L. Ren, T. Mo, X. Cheng, and X. Li, “Temporal–frequency attention Proc. ESANN, 2013, vol. 3, no. 1, pp. 3–4.
+focusing for time series extrinsic regression via auxiliary task,” IEEE [49] D. Micucci, M. Mobilio, and P. Napoletano, “UniMiB SHAR: A
+Trans. Neural Netw. Learn. Syst., vol. 35, no. 11, pp. 15494–15506, dataset for human activity recognition using acceleration data from
+Nov. 2024, doi: 10.1109/TNNLS.2023.3287318. smartphones,” Appl. Sci., vol. 7, no. 10, p. 1101, Oct. 2017, doi:
+[27] R. Cipolla, Y. Gal, and A. Kendall, “Multi-task learning using uncer-
+10.3390/app7101101.
+tainty to weigh losses for scene geometry and semantics,” in Proc. [50] T. Gong et al., “A comparison of loss weighting strategies for
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2018, multi task learning in deep neural networks,” IEEE Access, vol. 7,
+pp. 7482–7491, doi: 10.1109/CVPR.2018.00781. pp. 141627–141632, 2019, doi: 10.1109/ACCESS.2019.2943604.
+[28] Y. Wang et al., “Incorporating prior knowledge into self-supervised [51] B. K. Iwana and S. Uchida, “An empirical survey of data augmentation
+representation learning for long PHM signal,” Rel. Eng. Syst. Saf., for time series classification with neural networks,” PLoS ONE, vol. 16,
+vol. 241, Jan. 2024, Art. no. 109602, doi: 10.1016/j.ress.2023.109602. no. 7, Jul. 2021, Art. no. e0254841, doi: 10.1371/journal.pone.0254841.
+[29] X. Zhang, Z. Zhao, T. Tsiligkaridis, and M. Zitnik, “Self-supervised [52] Z. Wang, W. Yan, and T. Oates, “Time series classification from scratch
+contrastive pre-training for time series via time-frequency consistency,” with deep neural networks: A strong baseline,” in Proc. Int. Joint
+2022, arXiv:2206.08496. Conf. Neural Netw. (IJCNN), May 2017, pp. 1578–1585, doi: 10.1109/
+[30] V. Gorade, A. Singh, and D. Mishra, “Large scale time-series repre- IJCNN.2017.7966039.
+sentation learning via simultaneous low- and high-frequency feature [53] H. I. Fawaz, G. Forestier, J. Weber, L. Idoumghar, and P.-A. Mu¨ller,
+bootstrapping,” IEEE Trans. Neural Netw. Learn. Syst., vol. 36, no. 1, “Deep learning for time series classification: A review,” Data Mining
+pp. 991–1002, Jan. 2025, doi: 10.1109/TNNLS.2023.3331506. Knowl. Discovery, vol. 33, no. 4, pp. 917–963, Jul. 2019, doi: 10.1007/
+[31] X. Zhu, D. Shen, H. Wang, and Y. Hao, “FCNet: Fully complex network s10618-019-00619-1.
+for time series forecasting,” IEEE Internet Things J., vol. 11, no. 24, [54] V. Kumar and P. R. Muduli, “Attentive Bi-LSTM-based method for noise
+pp. 40127–40139, Dec. 2024, doi: 10.1109/JIOT.2024.3449903. suppression in ambulatory ECG measurements,” IEEE Trans. Instrum.
+Meas., vol. 72, pp. 1–9, 2023, doi: 10.1109/TIM.2023.3330182.
+[32] C.-C. Jin and X. Chen, “An end-to-end framework combining
+[55] G. Zerveas, S. Jayaraman, D. Patel, A. Bhamidipaty, and C. Eickhoff, “A
+time–frequency expert knowledge and modified transformer networks
+transformer-based framework for multivariate time series representation
+for vibration signal classification,” Expert Syst. Appl., vol. 171, Jun.
+2021, Art. no. 114570, doi: 10.1016/j.eswa.2021.114570. learning,” in Proc. 27th ACM SIGKDD Conf. Knowl. Discovery Data
+Mining, Aug. 2021.
+[33] Z. Qi, S. Wang, C. Su, L. Su, Q. Huang, and Q. Tian, “Self-regulated
+[56] N. M. Foumani, C. W. Tan, G. I. Webb, and M. Salehi, “Improving posi-
+learning for egocentric video activity anticipation,” IEEE Trans. Pattern
+tion encoding of transformers for multivariate time series classification,”
+Anal. Mach. Intell., vol. 45, no. 6, pp. 6715–6730, Jun. 2023, doi:
+10.1109/TPAMI.2021.3059923. Data Mining Knowl. Discovery, vol. 38, no. 1, pp. 22–48, Jan. 2024,
+doi: 10.1007/s10618-023-00948-2.
+[34] X. Shu, B. Xu, L. Zhang, and J. Tang, “Multi-granularity anchor-
+[57] F. Wang and H. Liu, “Understanding the behaviour of contrastive loss,”
+contrastive representation learning for semi-supervised skeleton-based
+2020, arXiv:2012.09740.
+action recognition,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 45,
+no. 6, pp. 7559–7576, Jun. 2023, doi: 10.1109/TPAMI.2022.3222871.
+[35] Z. Sun and X. Li, “Contrast-Phys+: Unsupervised and weakly- Tao Zhang received the B.E. degree in aircraft
+supervised video-based remote physiological measurement via spa- control and information engineering from Beihang
+tiotemporal contrast,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 46, University, Beijing, China, in 2023, where he is cur-
+no. 8, pp. 5835–5851, Aug. 2024, doi: 10.1109/TPAMI.2024.3367910. rently pursuing the M.Eng. degree with the School
+of Aeronautic Science and Engineering.
+[36] A. Hyvarinen and H. Morioka, “Unsupervised feature extraction by time-
+His research interests include time series analysis,
+contrastive learning and nonlinear ICA,” 2016, arXiv:1605.06336.
+human–robot interaction, and deep learning.
+[37] E. Eldele et al., “Self-supervised contrastive representation learning
+for semi-supervised time-series classification,” IEEE Trans. Pattern
+Anal. Mach. Intell., vol. 45, no. 12, pp. 15604–15618, Dec. 2023, doi:
+10.1109/TPAMI.2023.3308189.
+[38] Z. Yue et al., “TS2 Vec: Towards universal representation of time series,”
+Ke Li (Member, IEEE) received the Ph.D. degree
+2021, arXiv:2106.10466.
+from the Department of Human-Machine and Envi-
+[39] A. Tripathi, A. K. Mondal, L. Kumar, and A. P. Prathosh, “SCLAiR:
+ronmental Engineering, Beihang University, Beijing,
+Supervised contrastive learning for user and device independent airwrit-
+China, in 2008.
+ing recognition,” IEEE Sensors Lett., vol. 6, no. 2, pp. 1–4, Feb. 2022,
+doi: 10.1109/LSENS.2021.3139473. From 2008 to 2010, he was a Post-Doctoral
+Researcher at the Institute of Fluid Mechanics, Bei-
+[40] R. Soklaski, M. Yee, and T. Tsiligkaridis, “Fourier-based augmen-
+hang University. From 2012 to 2014, he conducted
+tations for improved robustness and uncertainty calibration,” 2022,
+research as a Visiting Scholar at The Univer-
+arXiv:2202.12412.
+sity of North Carolina at Chapel Hill, Chapel
+[41] A. Radford et al., “Learning transferable visual models from natural
+Hill, NC, USA. He is currently a Professor and
+language supervision,” in Proc. ICML, 2021, pp. 8748–8763.
+the Director of the Experimental Teaching Cen-
+[42] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast for
+ter, Beihang University. His research interests include theory and engi-
+unsupervised visual representation learning,” in Proc. IEEE/CVF Conf.
+neering of human–machine–environment intelligent systems, data mining,
+Comput. Vis. Pattern Recognit. (CVPR), Jun. 2020, pp. 9729–9738.
+human–machine hybrid intelligent methods, and applications of machine
+[43] M. Obaid, F. Kistler, G. Kasparavicˇiu¯te, A. E. Yantac¸, and M. Fjeld, learning.
+“How would you gesture navigate a drone?: A user-centered approach
+to control a drone,” in Proc. 20th Int. Academic Mindtrek Conf., Oct.
+2016, pp. 113–121, doi: 10.1145/2994310.2994348. Shaofan Wang received the B.S. degree in mechan-
+[44] M. Seuter, E. R. Macrillante, G. Bauer, and C. Kray, “Running with ical engineering from Shandong University, Jinan,
+drones: Desired services and control gestures,” in Proc. 30th Austral. China, in 2015, the M.S. degree in mechanical
+Conf. Comput.-Human Interact., Dec. 2018, pp. 384–395, doi: 10.1145/ engineering from Karlsruhe Institute of Technology,
+3292147.3292156. Karlsruhe, Germany, in 2019, and the Ph.D. degree
+[45] J. P. Va´sconez, L. I. Barona Lo´pez, A´ . L. Valdivieso Caraguay, and from the Department of Human-Machine and Envi-
+M. E. Benalca´zar, “Hand gesture recognition using EMG-IMU signals ronmental Engineering, Beihang University, Beijing,
+and deep Q-networks,” Sensors, vol. 22, no. 24, p. 9613, Dec. 2022, China, in 2025.
+doi: 10.3390/s22249613. His research interests include applications of
+[46] A. Bagnall et al., “The UEA multivariate time series classification deep learning, deep reinforcement learning, and
+archive, 2018,” 2018, arXiv:1811.00075. human–robot interaction methods.
+Authorized licensed use limited to: University of Science & Technology of China. Downloaded on July 05,2026 at 10:02:42 UTC from IEEE Xplore. Restrictions apply.
