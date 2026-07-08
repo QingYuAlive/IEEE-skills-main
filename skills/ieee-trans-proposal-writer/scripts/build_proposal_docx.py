@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Convert researchwrite proposal markdown to properly formatted .docx.
+"""Convert IEEE Transactions proposal markdown to a formatted .docx.
 
 Usage: python3 scripts/build_proposal_docx.py <input.md> [output.docx]
 
-Formatting standard (JL's academic proposals):
+Formatting standard (IEEE Transactions proposal draft):
 - Title: centered, Times New Roman + 宋体, 18pt bold
 - Headings: Times New Roman + 宋体, 16/14/12pt bold, black
 - Body: Times New Roman + 宋体, 12pt, 1.5 line spacing, NO first-line indent
