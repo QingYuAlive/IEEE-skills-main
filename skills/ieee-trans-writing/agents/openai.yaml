@@ -1,4 +1,0 @@
-interface:
-  display_name: "IEEE Trans Writing"
-  short_description: "Draft math-first IEEE Transactions manuscript sections"
-  default_prompt: "Help me turn my notation ledger, objectives, OOD protocol, experiments, and claims into a rigorous IEEE Transactions manuscript section for TCYB, THMS, or TNNLS."

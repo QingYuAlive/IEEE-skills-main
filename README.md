@@ -1,22 +1,48 @@
-# IEEE-skills-main
+# IEEE Skills
 
-面向 IEEE Transactions on Cybernetics, IEEE Transactions on Human-Machine Systems, IEEE Transactions on Neural Networks and Learning Systems 的本地 skill 生态。
+一组面向 IEEE Transactions 写作流程的 Codex skills，覆盖研究方案设计、论文起草、语言润色、图表生成和投稿前审稿。
 
-本项目从 `ieee_corpus/` 中 10 篇近年 IEEE Transactions 论文反推写作、润色、图表与预审规则。核心原则是：先建立数学对象，再写文字；先闭合实验防线，再提升语言；所有强结论都要能追溯到方法定义、消融、跨数据集验证或统计检验。
+目标场景包括 IEEE Transactions on Cybernetics、IEEE Transactions on Human-Machine Systems、IEEE Transactions on Neural Networks and Learning Systems，以及相近的机器学习、神经网络、时间序列、生物信号、工业诊断和 domain generalization 论文。
 
-## 目录
+## Skills
 
-- `ieee_corpus/`: 用户提供的 PDF 论文语料。
-- `analysis/`: PDF 文本抽取与证据索引。
-- `skills/_shared/ieee-trans-guidelines.md`: 所有 IEEE skills 必读的共享准则。
-- `skills/ieee-trans-proposal-writer/`: 研究方案与论文 proposal。
-- `skills/ieee-trans-writing/`: IEEE Transactions 论文起草与重构。
-- `skills/ieee-trans-polishing/`: IEEE 风格润色、翻译与逻辑修补。
-- `skills/ieee-trans-figure/`: 论文图表设计、生成与审查。
-- `skills/ieee-trans-reviewer/`: 投稿前强审稿协议。
+- `skills/ieee-proposal-writer/`: 研究方案、符号体系、方法公式化、实验矩阵和投稿前 proposal 审查。
+- `skills/ieee-writing/`: Abstract、Introduction、Method、Experiments 等论文部分的起草与结构重写。
+- `skills/ieee-polishing/`: IEEE 风格英文润色、中文到英文改写、claim calibration 和逻辑修补。
+- `skills/ieee-figure/`: IEEE 栏宽、字体、配色、LaTeX 数学标注和可复现实验图代码生成。
+- `skills/ieee-reviewer/`: 模拟严苛审稿人，对数学定义、理论漏洞、实验协议、消融和表述边界做投稿前审查。
 
-## 使用原则
+共享规则位于 `skills/_shared/ieee-guidelines.md`，由各个 skill 在运行时按需读取。
 
-每个 skill 触发后都必须先读取 `../_shared/ieee-trans-guidelines.md`。不要把 Nature 写作风格直接迁移到 IEEE；IEEE 版本更重视符号定义、目标函数、算法步骤、复杂度、可复现实验和消融链条。
+## Installation
 
-如果用户材料不足，先输出缺口清单和可继续执行的最小版本；不要编造数据、实验、引用、显著性或结论。
+将需要的 skill 目录复制到本地 Codex skills 目录即可，例如：
+
+```powershell
+Copy-Item -Recurse .\skills\ieee-writing $env:USERPROFILE\.codex\skills\
+Copy-Item -Recurse .\skills\ieee-polishing $env:USERPROFILE\.codex\skills\
+```
+
+也可以整体复制 `skills/` 下的所有 `ieee-*` 目录。
+
+## Usage Examples
+
+```text
+Use ieee-proposal-writer to turn my sEMG force-domain generalization idea into a rigorous proposal.
+```
+
+```text
+Use ieee-writing to draft the Method section from this notation ledger and objective function.
+```
+
+```text
+Use ieee-reviewer to audit this manuscript before TCYB submission.
+```
+
+```text
+Use ieee-figure to generate a double-column ablation figure from these arrays.
+```
+
+## Repository Notes
+
+This repository is intended to store reusable skill instructions and templates. Do not commit private PDFs, proprietary datasets, generated model outputs, or large local analysis artifacts unless they are explicitly meant to be public.
