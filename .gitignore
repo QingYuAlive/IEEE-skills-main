@@ -1,3 +1,4 @@
 ieee_corpus/
 __pycache__/
 *.pyc
+REQUIRED_PAPERS.md
